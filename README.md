@@ -48,6 +48,21 @@ JavaScript bundle. Deploy them after any change:
 npx firebase-tools deploy --only firestore:rules
 ```
 
+## Admin access
+
+Officers sign in at `/admin` with Google. An account can edit the board only if
+its Firebase Auth uid has a document in the `admins` collection, which is also
+what `firestore.rules` checks — so it holds against anything talking straight to
+the database, not just against the UI. See [SECURITY.md](SECURITY.md).
+
+## Paging
+
+Each public collection loads `PAGE_SIZE` (60) documents at a time, newest first,
+with a **Load older** button for the rest. `officers` and `requestTypes` have no
+date field, so they are capped but not ordered — a Firestore `orderBy` silently
+omits documents that lack the field it sorts on, which would have hidden all of
+them.
+
 ## Further documentation
 
 | File | Covers |

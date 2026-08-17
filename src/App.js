@@ -1,10 +1,11 @@
-import React, { useState, createContext } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import React, { createContext, useMemo } from 'react';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 
 // Layout Components
 import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
 import Sidebar from './components/Layout/Sidebar';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Pages
 import TransparencyBoard from './pages/TransparencyBoard';
@@ -25,7 +26,17 @@ import ConstitutionByLaws from './pages/ConstitutionByLaws';
 import AdminLogin from './pages/Admin/AdminLogin';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 
-// Create Context for Admin Auth
+import { useVoterAuth } from './context/VoterAuthContext';
+
+/**
+ * Admin state, consumed by every page to decide whether to show edit controls.
+ *
+ * `isAdmin` is now the *server-verifiable* answer: a real Firebase Auth session
+ * whose uid has a document in the `admins` collection. It used to be a
+ * localStorage flag set by a hardcoded username and password, which Firestore
+ * had no way to check — so the security rules had to leave every content
+ * collection world-writable. This is the change that let those rules close.
+ */
 export const AuthContext = createContext();
 
 // Layout wrapper for public pages
@@ -41,39 +52,73 @@ const PublicLayout = ({ children, setSidebarOpen, sidebarOpen }) => (
 );
 
 function App() {
-  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem('ssc_admin_auth') === 'true');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { isSscAdmin, isCheckingAdmin, isAuthLoading, voter, signOut } = useVoterAuth();
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const location = useLocation();
-  
+
   const isAdminRoute = location.pathname.startsWith('/admin');
 
+  // Resolving the session takes a moment on load. Until it settles, treat the
+  // visitor as not an admin so edit controls never flash into view.
+  const isResolvingAdmin = isAuthLoading || isCheckingAdmin;
+
+  const authValue = useMemo(
+    () => ({
+      isAdmin: isSscAdmin,
+      isResolvingAdmin,
+      adminEmail: voter?.email || '',
+      signOutAdmin: signOut
+    }),
+    [isSscAdmin, isResolvingAdmin, voter?.email, signOut]
+  );
+
   return (
-    <AuthContext.Provider value={{ isAdmin, setIsAdmin }}>
+    <AuthContext.Provider value={authValue}>
       <div className="app">
         {isAdminRoute ? (
           // Admin routes without public layout
-          <Routes>
-            <Route path="/admin" element={<AdminLogin />} />
-            <Route path="/admin/dashboard/*" element={<AdminDashboard />} />
-          </Routes>
+          <ErrorBoundary key={location.pathname} scope="This admin page">
+            <Routes>
+              <Route path="/admin" element={<AdminLogin />} />
+              <Route
+                path="/admin/dashboard/*"
+                element={
+                  isResolvingAdmin ? (
+                    <div className="admin-route-checking">Checking your access…</div>
+                  ) : isSscAdmin ? (
+                    <AdminDashboard />
+                  ) : (
+                    // Deep-linking to the dashboard without a verified account
+                    // lands on the sign-in screen rather than an empty shell.
+                    <Navigate to="/admin" replace />
+                  )
+                }
+              />
+            </Routes>
+          </ErrorBoundary>
         ) : (
           // Public routes with public layout
           <PublicLayout setSidebarOpen={setSidebarOpen} sidebarOpen={sidebarOpen}>
-            <Routes>
-              <Route path="/" element={<TransparencyBoard />} />
-              <Route path="/announcements" element={<Announcements />} />
-              <Route path="/memorandum" element={<MemorandumOrders />} />
-              <Route path="/calendar" element={<Calendar />} />
-              <Route path="/ssc" element={<SSC />} />
-              <Route path="/ssc/about" element={<AboutSSC />} />
-              <Route path="/ssc/contact" element={<ContactUs />} />
-              <Route path="/ssc/constitution" element={<ConstitutionByLaws />} />
-              <Route path="/ssc/resolutions" element={<Resolutions />} />
-              <Route path="/ssc/minutes-of-meeting" element={<MOM />} />
-              <Route path="/ssc/narrative-reports" element={<NarrativeReports />} />
-              <Route path="/ssc/accomplishments" element={<AccomplishmentTracker />} />
-              <Route path="/ssc/request-letters" element={<RequestLetters />} />
-            </Routes>
+            {/* Keyed on the path so navigating away from a broken page clears
+                the error instead of trapping the visitor on it. The navbar,
+                sidebar and footer stay outside, so they keep working. */}
+            <ErrorBoundary key={location.pathname} scope="This page">
+              <Routes>
+                <Route path="/" element={<TransparencyBoard />} />
+                <Route path="/announcements" element={<Announcements />} />
+                <Route path="/memorandum" element={<MemorandumOrders />} />
+                <Route path="/calendar" element={<Calendar />} />
+                <Route path="/ssc" element={<SSC />} />
+                <Route path="/ssc/about" element={<AboutSSC />} />
+                <Route path="/ssc/contact" element={<ContactUs />} />
+                <Route path="/ssc/constitution" element={<ConstitutionByLaws />} />
+                <Route path="/ssc/resolutions" element={<Resolutions />} />
+                <Route path="/ssc/minutes-of-meeting" element={<MOM />} />
+                <Route path="/ssc/narrative-reports" element={<NarrativeReports />} />
+                <Route path="/ssc/accomplishments" element={<AccomplishmentTracker />} />
+                <Route path="/ssc/request-letters" element={<RequestLetters />} />
+              </Routes>
+            </ErrorBoundary>
           </PublicLayout>
         )}
       </div>

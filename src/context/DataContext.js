@@ -5,7 +5,10 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  limit,
   onSnapshot,
+  orderBy,
+  query,
   serverTimestamp,
   setDoc,
   updateDoc
@@ -23,6 +26,7 @@ import {
 } from '../data/sampleData';
 import { db, isFirebaseEnabled } from '../lib/firebase';
 import { ALERT_TOPICS } from '../lib/notifications';
+import { deleteRecordFiles } from '../lib/uploads';
 import { useVoterAuth } from './VoterAuthContext';
 
 const DataContext = createContext(null);
@@ -252,6 +256,89 @@ export const VOTE_CHOICES = ['for', 'against', 'abstain'];
  */
 export const voteDocId = (resolutionId, uid) => `${resolutionId}__${uid}`;
 
+/**
+ * How many documents each public collection loads at a time.
+ *
+ * Before this existed, every listener pulled its entire collection on every page
+ * load and sorted client-side. Fine at a few dozen documents; at several hundred
+ * — especially with images embedded as base64 data URLs — it is a slow first
+ * paint and a large share of the free Firestore read quota, on every visit.
+ */
+export const PAGE_SIZE = 60;
+
+/**
+ * The listener table.
+ *
+ * `orderField` moves the sort to the server so `limit` returns the *newest*
+ * documents rather than an arbitrary slice.
+ *
+ * Two things to know before adding a row:
+ *
+ *  1. A Firestore `orderBy` **silently omits documents that lack that field**.
+ *     Only fields the normalisers always write are safe here — every
+ *     `normalize*` above defaults `date`/`effectiveDate`, which is what makes
+ *     this sound. `officers` and `requestTypes` have no date at all, so they get
+ *     a cap and no ordering.
+ *  2. `sort` is still applied client-side, because the display order is not
+ *     always the fetch order: events are fetched newest-first so the limit keeps
+ *     upcoming activities, then flipped to chronological for the calendar.
+ */
+const PUBLIC_COLLECTIONS = [
+  { key: 'announcements', orderField: 'date', direction: 'desc', label: 'announcements' },
+  {
+    key: 'events',
+    orderField: 'date',
+    direction: 'desc',
+    label: 'calendar events',
+    // Fetch latest-dated first (so upcoming activities survive the limit),
+    // display oldest-first (so the calendar reads chronologically).
+    sort: (a, b) => new Date(a.date) - new Date(b.date)
+  },
+  { key: 'resolutions', orderField: 'date', direction: 'desc', label: 'resolutions' },
+  { key: 'officers', label: 'officers' },
+  { key: 'meetings', orderField: 'date', direction: 'desc', label: 'meeting records' },
+  { key: 'accomplishments', orderField: 'date', direction: 'desc', label: 'accomplishments' },
+  { key: 'requestTypes', label: 'request letter types' },
+  { key: 'memorandums', orderField: 'date', direction: 'desc', label: 'memorandums' },
+  { key: 'narrativeReports', orderField: 'date', direction: 'desc', label: 'narrative reports' },
+  { key: 'constitution', orderField: 'effectiveDate', direction: 'desc', label: 'constitution documents' }
+];
+
+/**
+ * Deletes a document and then the uploaded files it referenced.
+ *
+ * Order matters: the document goes first, so a cleanup that fails cannot leave
+ * the record undeletable. The file removal is deliberately not awaited by
+ * callers — an orphaned object in Storage is a housekeeping issue, not
+ * something that should make "Delete" appear to fail.
+ *
+ * Only files in this project's Storage bucket are removed. Base64 fallbacks
+ * live inside the document and vanish with it; Google Drive links belong to
+ * someone's Drive and are left alone. See deleteRecordFiles.
+ */
+const removeDocAndFiles = async (collectionName, id) => {
+  const reference = doc(db, collectionName, String(id));
+
+  // Read the record rather than looking it up in local state: the listeners
+  // are paginated, so a document outside the current page would not be found
+  // in the array, and its files would be orphaned silently.
+  let record = null;
+  try {
+    const snapshot = await getDoc(reference);
+    if (snapshot.exists()) record = snapshot.data();
+  } catch (error) {
+    // Fall through — losing the file cleanup is better than blocking a delete.
+  }
+
+  await deleteDoc(reference);
+
+  if (record) {
+    deleteRecordFiles(record).catch(() => {
+      /* already logged; never surfaced as a failed delete */
+    });
+  }
+};
+
 export const DataProvider = ({ children }) => {
   // Tickets and suggestions are only readable by verified admins, so the
   // listeners below stay closed until an admin is signed in.
@@ -280,106 +367,74 @@ export const DataProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(isFirebaseEnabled);
   const [error, setError] = useState('');
 
+  /**
+   * Per-collection fetch ceiling. Raised by loadMore(), which re-subscribes that
+   * one listener with a larger limit.
+   */
+  const [limits, setLimits] = useState(() =>
+    PUBLIC_COLLECTIONS.reduce((acc, config) => ({ ...acc, [config.key]: PAGE_SIZE }), {})
+  );
+
+  /**
+   * True when a collection's last snapshot filled its limit exactly, i.e. there
+   * are probably more documents behind it. Cheaper than a count query, and the
+   * only cost of being wrong is one "Load more" that returns nothing new.
+   */
+  const [hasMore, setHasMore] = useState({});
+
   useEffect(() => {
     if (!isFirebaseEnabled || !db) {
       setIsLoading(false);
       return undefined;
     }
 
-    const unsubAnnouncements = onSnapshot(
-      collection(db, 'announcements'),
-      async (snapshot) => {
-        const list = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-        setAnnouncements(list.sort((a, b) => new Date(b.date) - new Date(a.date)));
-      },
-      () => setError('Failed to load announcements from cloud database.')
-    );
+    const setters = {
+      announcements: setAnnouncements,
+      events: setEvents,
+      resolutions: setResolutions,
+      officers: setOfficers,
+      meetings: setMeetings,
+      accomplishments: setAccomplishments,
+      requestTypes: setRequestTypes,
+      memorandums: setMemorandums,
+      narrativeReports: setNarrativeReports,
+      constitution: setConstitutionDocs
+    };
 
-    const unsubEvents = onSnapshot(
-      collection(db, 'events'),
-      async (snapshot) => {
-        const list = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-        setEvents(list.sort((a, b) => new Date(a.date) - new Date(b.date)));
-      },
-      () => setError('Failed to load calendar events from cloud database.')
-    );
+    const byNewestDate = (field) => (a, b) => new Date(b[field]) - new Date(a[field]);
 
-    const unsubResolutions = onSnapshot(
-      collection(db, 'resolutions'),
-      async (snapshot) => {
-        const list = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-        setResolutions(list.sort((a, b) => new Date(b.date) - new Date(a.date)));
-      },
-      () => setError('Failed to load resolutions from cloud database.')
-    );
+    const unsubscribers = PUBLIC_COLLECTIONS.map((config) => {
+      const cap = limits[config.key] ?? PAGE_SIZE;
 
-    const unsubOfficers = onSnapshot(
-      collection(db, 'officers'),
-      async (snapshot) => {
-        // Do not auto-seed officers when the collection is empty.
-        // Preserve the ability to have an empty officers list after deletions.
-        const list = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-        setOfficers(list);
-      },
-      () => setError('Failed to load officers from cloud database.')
-    );
+      // orderBy would drop documents missing the field, so collections without a
+      // date get a bare cap instead.
+      const constraints = config.orderField
+        ? [orderBy(config.orderField, config.direction || 'desc'), limit(cap)]
+        : [limit(cap)];
 
-    const unsubMeetings = onSnapshot(
-      collection(db, 'meetings'),
-      async (snapshot) => {
-        const list = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-        setMeetings(list.sort((a, b) => new Date(b.date) - new Date(a.date)));
-      },
-      () => setError('Failed to load meeting records from cloud database.')
-    );
+      const sortFn = config.sort || (config.orderField ? byNewestDate(config.orderField) : null);
 
-    const unsubAccomplishments = onSnapshot(
-      collection(db, 'accomplishments'),
-      async (snapshot) => {
-        const list = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-        setAccomplishments(list.sort((a, b) => new Date(b.date) - new Date(a.date)));
-      },
-      () => setError('Failed to load accomplishments from cloud database.')
-    );
+      return onSnapshot(
+        query(collection(db, config.key), ...constraints),
+        (snapshot) => {
+          const list = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+          setters[config.key](sortFn ? [...list].sort(sortFn) : list);
+          setHasMore((prev) => ({ ...prev, [config.key]: snapshot.size >= cap }));
+        },
+        () => setError(`Failed to load ${config.label} from cloud database.`)
+      );
+    });
 
-    const unsubRequestTypes = onSnapshot(
-      collection(db, 'requestTypes'),
-      async (snapshot) => {
-        const list = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-        setRequestTypes(list);
-      },
-      () => setError('Failed to load request letter types from cloud database.')
-    );
-
-    const unsubMemorandums = onSnapshot(
-      collection(db, 'memorandums'),
-      async (snapshot) => {
-        const list = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-        setMemorandums(list.sort((a, b) => new Date(b.date) - new Date(a.date)));
-      },
-      () => setError('Failed to load memorandums from cloud database.')
-    );
-
-    const unsubNarrativeReports = onSnapshot(
-      collection(db, 'narrativeReports'),
-      async (snapshot) => {
-        const list = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-        setNarrativeReports(list.sort((a, b) => new Date(b.date) - new Date(a.date)));
-      },
-      () => setError('Failed to load narrative reports from cloud database.')
-    );
-
-    // Not seeded — the collection legitimately starts empty until an admin
-    // uploads the constitution.
-    const unsubConstitution = onSnapshot(
-      collection(db, 'constitution'),
-      (snapshot) => {
-        const list = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-        setConstitutionDocs(list.sort((a, b) => new Date(b.effectiveDate) - new Date(a.effectiveDate)));
-      },
-      () => setError('Failed to load constitution documents from cloud database.')
-    );
-
+    /*
+     * Votes are deliberately NOT limited.
+     *
+     * Every tally on the resolutions page is derived from these documents, so a
+     * limit would not slow the page down — it would make the counts wrong, and
+     * wrong quietly. One document per account per resolution means this is the
+     * collection most likely to grow large, and the real fix is a maintained
+     * counter per resolution (or a server-side aggregation query) rather than
+     * truncating the source. Until then, correctness wins over payload size.
+     */
     const unsubResolutionVotes = onSnapshot(
       collection(db, 'resolutionVotes'),
       (snapshot) => {
@@ -391,19 +446,17 @@ export const DataProvider = ({ children }) => {
     setIsLoading(false);
 
     return () => {
-      unsubConstitution();
+      unsubscribers.forEach((unsubscribe) => unsubscribe());
       unsubResolutionVotes();
-      unsubAnnouncements();
-      unsubEvents();
-      unsubResolutions();
-      unsubOfficers();
-      unsubMeetings();
-      unsubAccomplishments();
-      unsubRequestTypes();
-      unsubMemorandums();
-      unsubNarrativeReports();
     };
-  }, []);
+  }, [limits]);
+
+  /** Fetch another page of one collection. */
+  const loadMore = (collectionKey) => {
+    setLimits((prev) => ({ ...prev, [collectionKey]: (prev[collectionKey] ?? PAGE_SIZE) + PAGE_SIZE }));
+  };
+
+
 
   const createAnnouncement = async (payload) => {
     if (!isFirebaseEnabled || !db) {
@@ -427,7 +480,7 @@ export const DataProvider = ({ children }) => {
       setAnnouncements((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    await deleteDoc(doc(db, 'announcements', String(id)));
+    await removeDocAndFiles('announcements', id);
   };
 
   const createEvent = async (payload) => {
@@ -452,7 +505,7 @@ export const DataProvider = ({ children }) => {
       setEvents((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    await deleteDoc(doc(db, 'events', String(id)));
+    await removeDocAndFiles('events', id);
   };
 
   const createResolution = async (payload) => {
@@ -477,7 +530,7 @@ export const DataProvider = ({ children }) => {
       setResolutions((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    await deleteDoc(doc(db, 'resolutions', String(id)));
+    await removeDocAndFiles('resolutions', id);
   };
 
   const createOfficer = async (payload) => {
@@ -502,7 +555,7 @@ export const DataProvider = ({ children }) => {
       setOfficers((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    await deleteDoc(doc(db, 'officers', String(id)));
+    await removeDocAndFiles('officers', id);
   };
 
   const createMeeting = async (payload) => {
@@ -527,7 +580,7 @@ export const DataProvider = ({ children }) => {
       setMeetings((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    await deleteDoc(doc(db, 'meetings', String(id)));
+    await removeDocAndFiles('meetings', id);
   };
 
   const createAccomplishment = async (payload) => {
@@ -552,7 +605,7 @@ export const DataProvider = ({ children }) => {
       setAccomplishments((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    await deleteDoc(doc(db, 'accomplishments', String(id)));
+    await removeDocAndFiles('accomplishments', id);
   };
 
   const createRequestType = async (payload) => {
@@ -577,7 +630,7 @@ export const DataProvider = ({ children }) => {
       setRequestTypes((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    await deleteDoc(doc(db, 'requestTypes', String(id)));
+    await removeDocAndFiles('requestTypes', id);
   };
 
   const createMemorandum = async (payload) => {
@@ -602,7 +655,7 @@ export const DataProvider = ({ children }) => {
       setMemorandums((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    await deleteDoc(doc(db, 'memorandums', String(id)));
+    await removeDocAndFiles('memorandums', id);
   };
 
   const createNarrativeReport = async (payload) => {
@@ -627,7 +680,7 @@ export const DataProvider = ({ children }) => {
       setNarrativeReports((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    await deleteDoc(doc(db, 'narrativeReports', String(id)));
+    await removeDocAndFiles('narrativeReports', id);
   };
 
   const createConstitutionDoc = async (payload) => {
@@ -653,7 +706,7 @@ export const DataProvider = ({ children }) => {
       setConstitutionDocs((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    await deleteDoc(doc(db, 'constitution', String(id)));
+    await removeDocAndFiles('constitution', id);
   };
 
   // Admin-only listeners. Kept in their own effect so they attach and detach
@@ -867,6 +920,11 @@ export const DataProvider = ({ children }) => {
       isLoading,
       error,
       isCloudMode: isFirebaseEnabled,
+      // Paging: `hasMore.announcements` is true while more may exist,
+      // `loadMore('announcements')` fetches the next page.
+      hasMore,
+      loadMore,
+      pageSize: PAGE_SIZE,
       createAnnouncement,
       updateAnnouncement,
       deleteAnnouncement,
@@ -917,7 +975,7 @@ export const DataProvider = ({ children }) => {
       getResolutionTally,
       getMyResolutionVote
     }),
-    [announcements, events, resolutions, officers, meetings, accomplishments, requestTypes, memorandums, narrativeReports, constitutionDocs, resolutionVotes, voteTallies, tickets, suggestions, subscribers, isLoading, error]
+    [announcements, events, resolutions, officers, meetings, accomplishments, requestTypes, memorandums, narrativeReports, constitutionDocs, resolutionVotes, voteTallies, tickets, suggestions, subscribers, isLoading, error, hasMore]
   );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

@@ -175,28 +175,27 @@ service cloud.firestore {
       allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
     }
 
-    // ---- resolutions ------------------------------------------------------
+    // ---- public content --------------------------------------------------
     //
-    // Public content is world-readable. Writes are left open below ONLY because
-    // this project has no admin authentication on the server side — the admin
-    // login is a localStorage flag, which a server cannot verify.
+    // World-readable, because that is the entire point of a transparency board.
+    // Writable only by an officer whose Google uid is in /admins.
     //
-    // >>> SEE THE NOTE AT THE BOTTOM OF THIS FILE. <<<
-    match /resolutions/{docId} {
-      allow read: if true;
-      allow write: if true; // TODO: tighten once admins sign in with Firebase Auth
-    }
-
-    // ---- other public collections ----------------------------------------
-    match /announcements/{docId}    { allow read: if true; allow write: if true; }
-    match /events/{docId}           { allow read: if true; allow write: if true; }
-    match /officers/{docId}         { allow read: if true; allow write: if true; }
-    match /meetings/{docId}         { allow read: if true; allow write: if true; }
-    match /accomplishments/{docId}  { allow read: if true; allow write: if true; }
-    match /requestTypes/{docId}     { allow read: if true; allow write: if true; }
-    match /memorandums/{docId}      { allow read: if true; allow write: if true; }
-    match /narrativeReports/{docId} { allow read: if true; allow write: if true; }
-    match /constitution/{docId}     { allow read: if true; allow write: if true; }
+    // These used to be `allow write: if true`, because the admin login was a
+    // hardcoded password checked in the browser and stored as a localStorage
+    // flag — nothing a server could verify. Since the API key ships inside the
+    // public JavaScript bundle, that meant anyone could delete every post.
+    // Admins now sign in through Firebase Auth, so the rules can check a real
+    // identity and this is closed.
+    match /resolutions/{docId}      { allow read: if true; allow write: if isSscAdmin(); }
+    match /announcements/{docId}    { allow read: if true; allow write: if isSscAdmin(); }
+    match /events/{docId}           { allow read: if true; allow write: if isSscAdmin(); }
+    match /officers/{docId}         { allow read: if true; allow write: if isSscAdmin(); }
+    match /meetings/{docId}         { allow read: if true; allow write: if isSscAdmin(); }
+    match /accomplishments/{docId}  { allow read: if true; allow write: if isSscAdmin(); }
+    match /requestTypes/{docId}     { allow read: if true; allow write: if isSscAdmin(); }
+    match /memorandums/{docId}      { allow read: if true; allow write: if isSscAdmin(); }
+    match /narrativeReports/{docId} { allow read: if true; allow write: if isSscAdmin(); }
+    match /constitution/{docId}     { allow read: if true; allow write: if isSscAdmin(); }
 
     // Deny anything not explicitly listed above.
     match /{document=**} {
@@ -206,17 +205,34 @@ service cloud.firestore {
 }
 
 // =============================================================================
-// IMPORTANT — what these rules do and do not protect
+// WHAT THESE RULES PROTECT
 //
-// PROTECTED: resolution voting.
+// Admin content (announcements, resolutions, officers, memorandums, ...).
+//   Writable only by a Google account with a document in /admins. Deleting or
+//   defacing the board now requires an account you granted, not just the API key
+//   out of the JavaScript bundle. Revoke by deleting that document; the app can
+//   never write to /admins, so access cannot be self-granted from a browser.
+//
+// Resolution voting.
 //   Votes require a real, verified Google sign-in, are pinned to the caller's
 //   own uid, and cannot be duplicated, forged for another account, or edited by
-//   anyone else. This holds even against a script talking straight to the API.
+//   anyone else.
 //
-// NOT YET PROTECTED: admin content (announcements, resolutions, officers, ...).
-//   The admin login is a hardcoded username/password checked in the browser and
-//   stored as a localStorage flag. Firestore cannot verify any of that, so the
-//   content collections above are still writable by anyone who finds the API
-//   key. Locking them down requires admins to sign in through Firebase Auth so
-//   the rules can check a real identity — see SECURITY.md.
+// Student tickets and the anonymous suggestion box.
+//   A ticket is readable only by whoever holds its reference code; listing them
+//   is admin-only, so grievances cannot be enumerated. Suggestions are
+//   write-only for students and store no identifying field at all.
+//
+// Email subscribers.
+//   The roster is admin-read-only, so student addresses cannot be harvested.
+//   Subscribing and unsubscribing stay open because the student is not signed
+//   in — see the note on that collection above.
+//
+// All of this holds against a script talking straight to the API, not just
+// against the UI. See SECURITY.md.
+//
+// ONE THING TO GET RIGHT WHEN DEPLOYING:
+//   Confirm you can sign in at /admin and reach the dashboard BEFORE deploying
+//   these rules. If /admins does not contain your uid, deploying locks you out
+//   of your own content until you add it in the Firebase console.
 // =============================================================================

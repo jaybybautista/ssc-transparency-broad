@@ -1,52 +1,48 @@
-import React, { useState, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { FiLock, FiUser, FiAlertCircle, FiArrowLeft } from 'react-icons/fi';
-import { AuthContext } from '../../App';
+import { FiAlertCircle, FiArrowLeft, FiLogOut, FiShield } from 'react-icons/fi';
+import { FcGoogle } from 'react-icons/fc';
+import { useVoterAuth } from '../../context/VoterAuthContext';
 import sscLogo from '../../assets/ssc_logo.svg';
 import psuLogo from '../../assets/psu_logo.svg';
 import './AdminLogin.css';
 
+/**
+ * Admin sign-in.
+ *
+ * This used to check a hardcoded username and password in the browser and
+ * remember the result as a localStorage flag. That could not be verified by
+ * Firestore, which is why the security rules had to leave every content
+ * collection writable by anyone holding the API key — and the key ships inside
+ * the public JavaScript bundle.
+ *
+ * Now an officer signs in with Google and the server decides: access is granted
+ * only if their Firebase Auth uid has a document in the `admins` collection. The
+ * same check runs inside firestore.rules, so it holds against a script talking
+ * straight to the database, not just against this screen.
+ */
 const AdminLogin = () => {
-  const [credentials, setCredentials] = useState({ username: '', password: '' });
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { setIsAdmin } = useContext(AuthContext);
+  const { voter, signIn, signOut, isSscAdmin, isCheckingAdmin, isAuthLoading, authError } = useVoterAuth();
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const navigate = useNavigate();
 
-  // Demo credentials - In production, this would be handled by a backend
-  const ADMIN_CREDENTIALS = {
-    username: 'admin',
-    password: 'ssc2026'
+  // Already verified — go straight through.
+  useEffect(() => {
+    if (isSscAdmin) navigate('/admin/dashboard', { replace: true });
+  }, [isSscAdmin, navigate]);
+
+  const handleSignIn = async () => {
+    setIsSigningIn(true);
+    // The school-domain allow-list applies to student voting, not to officers,
+    // who may well be using a personal Google account.
+    await signIn({ enforceVoteDomain: false });
+    setIsSigningIn(false);
   };
 
-  const handleChange = (e) => {
-    setCredentials({
-      ...credentials,
-      [e.target.name]: e.target.value
-    });
-    setError('');
-  };
+  const isBusy = isSigningIn || isAuthLoading || isCheckingAdmin;
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-
-    // Simulate API call
-    setTimeout(() => {
-      if (
-        credentials.username === ADMIN_CREDENTIALS.username &&
-        credentials.password === ADMIN_CREDENTIALS.password
-      ) {
-        setIsAdmin(true);
-        localStorage.setItem('ssc_admin_auth', 'true');
-        navigate('/admin/dashboard');
-      } else {
-        setError('Invalid username or password. Please try again.');
-      }
-      setIsLoading(false);
-    }, 1000);
-  };
+  // Signed in, but this account is not on the roster.
+  const isRejected = Boolean(voter) && !isSscAdmin && !isCheckingAdmin && !isAuthLoading;
 
   return (
     <div className="admin-login-page">
@@ -61,61 +57,54 @@ const AdminLogin = () => {
             <img src={psuLogo} alt="PSU Logo" className="login-logo-img" />
           </div>
           <h1>Admin Portal</h1>
-          <p>Sign in to access the PSU-UCC SSC Virtual Board admin dashboard</p>
+          <p>Sign in with your Google account to manage the PSU-UCC SSC Virtual Board</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="login-form">
-          {error && (
+        <div className="login-form">
+          {!!authError && (
             <div className="error-message">
               <FiAlertCircle />
-              <span>{error}</span>
+              <span>{authError}</span>
             </div>
           )}
 
-          <div className="form-group">
-            <label className="form-label">
-              <FiUser /> Username
-            </label>
-            <input
-              type="text"
-              name="username"
-              value={credentials.username}
-              onChange={handleChange}
-              className="form-input"
-              placeholder="Enter your username"
-              required
-            />
-          </div>
+          {isRejected ? (
+            <>
+              <div className="login-rejected">
+                <FiShield />
+                <div>
+                  <strong>This account does not have admin access.</strong>
+                  <p>
+                    You are signed in as <b>{voter.email}</b>, but it is not on the officer
+                    roster. Ask whoever manages the board to add your account, then sign in
+                    again.
+                  </p>
+                </div>
+              </div>
 
-          <div className="form-group">
-            <label className="form-label">
-              <FiLock /> Password
-            </label>
-            <input
-              type="password"
-              name="password"
-              value={credentials.password}
-              onChange={handleChange}
-              className="form-input"
-              placeholder="Enter your password"
-              required
-            />
-          </div>
+              <button type="button" className="login-btn secondary" onClick={signOut}>
+                <FiLogOut /> Sign out and try another account
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className={`login-btn google ${isBusy ? 'loading' : ''}`}
+                onClick={handleSignIn}
+                disabled={isBusy}
+              >
+                <FcGoogle />
+                {isBusy ? 'Checking your access…' : 'Sign in with Google'}
+              </button>
 
-          <button 
-            type="submit" 
-            className={`login-btn ${isLoading ? 'loading' : ''}`}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
-
-        {/* <div className="login-footer">
-          <p>For demo purposes:</p>
-          <p><strong>Username:</strong> admin</p>
-          <p><strong>Password:</strong> ssc2026</p>
-        </div> */}
+              <p className="login-note">
+                <FiShield /> Access is granted per account by the database itself, not by a
+                shared password — so it can be revoked instantly and cannot be passed around.
+              </p>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="login-bg">

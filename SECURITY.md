@@ -175,23 +175,36 @@ The topic choices are also cached in the student's own `localStorage`, so the
 panel can show a returning student what they signed up for without the board
 having to expose the roster.
 
-## Known gap: admin writes are still unprotected
+## Admin access
 
-The admin login (`admin` / `ssc2026`) is checked in the browser and remembered as
-a `localStorage` flag. Firestore has no way to verify that, so the content
-collections — announcements, resolutions, officers, meetings, and so on — are
-still writable by anyone who extracts the API key.
+Officers sign in with Google at `/admin`. Access is granted only if their
+Firebase Auth uid has a document in the `admins` collection — the same check
+`firestore.rules` runs before allowing any write to the content collections.
 
-**Voting is safe. Content is not.**
+This replaced a hardcoded `admin` / `ssc2026` login that was checked in the
+browser and remembered as a `localStorage` flag. Firestore had no way to verify
+that, so every content collection had to be left world-writable, and anyone who
+extracted the API key from the JavaScript bundle could have deleted the entire
+board. **That is now closed.**
 
-Closing this gap means having admins sign in through Firebase Auth so the rules
-can check a real identity. The usual approach:
+| Operation | Who can do it |
+|---|---|
+| Read announcements, resolutions, officers, minutes, ... | Anyone (it is a transparency board) |
+| Create, edit or delete any of them | Verified admins only |
+| Grant or revoke admin access | Only in the Firebase console |
 
-1. Create admin accounts in **Authentication → Users**.
-2. Set a custom claim on them (`{ admin: true }`) with the Firebase Admin SDK,
-   or keep an `admins/{uid}` collection.
-3. Change the content rules from `allow write: if true;` to
-   `allow write: if isAdmin();`.
-4. Replace the hardcoded login screen with a Firebase sign-in.
+The app can never write to `admins`, so access cannot be self-granted from a
+browser. Deleting an officer's document revokes their access immediately.
 
-Happy to implement that — it's a self-contained follow-up.
+### Adding an officer
+
+Same procedure as for the ticket inbox, above: they sign in once at `/admin` to
+create their Firebase Auth account, then you add a document to `admins` whose
+**document ID is exactly their User UID** (Authentication → Users).
+
+### Order of operations when deploying
+
+Confirm you can sign in at `/admin` and reach the dashboard **before** deploying
+`firestore.rules`. If your uid is not in `admins`, deploying will lock you out of
+editing your own content until you add it in the console. Reading is unaffected,
+so the public board stays up either way.

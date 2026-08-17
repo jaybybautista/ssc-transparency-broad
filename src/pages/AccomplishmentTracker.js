@@ -9,6 +9,7 @@ import AdminSearchBar, { matchesQuery } from '../components/AdminSearchBar';
 import RichContent from '../components/RichContent';
 import RichTextEditor from '../components/RichTextEditor';
 import { richTextToPlain } from '../components/richText';
+import LoadMore from '../components/LoadMore';
 import './AccomplishmentTracker.css';
 
 const AccomplishmentTracker = () => {
@@ -279,6 +280,10 @@ const AccomplishmentTracker = () => {
             </div>
           ))}
         </div>
+
+        {/* The listener fetches a page at a time, so older records
+            need a way to be reached. */}
+        <LoadMore collectionKey="accomplishments" label="accomplishments" shownCount={filteredAccomplishments.length} />
       </div>
 
       {/* Modal */}

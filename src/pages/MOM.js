@@ -13,6 +13,7 @@ import RichTextEditor from '../components/RichTextEditor';
 import AuthorByline from '../components/AuthorByline';
 import AuthorPicker, { EMPTY_AUTHOR } from '../components/AuthorPicker';
 import { richTextToPlain } from '../components/richText';
+import LoadMore from '../components/LoadMore';
 import './MOM.css';
 
 const MOM = () => {
@@ -372,6 +373,10 @@ const MOM = () => {
             </div>
           ))}
         </div>
+
+        {/* The listener fetches a page at a time, so older records
+            need a way to be reached. */}
+        <LoadMore collectionKey="meetings" label="minutes" shownCount={visibleMeetings.length} />
       </div>
 
       {/* Modal */}

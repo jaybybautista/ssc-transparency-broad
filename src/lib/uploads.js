@@ -1,4 +1,4 @@
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { isFirebaseEnabled, storage } from './firebase';
 import { notifyOutsideReact } from './notifier';
 
@@ -280,6 +280,86 @@ export const getLastUploadFailureReason = () => lastUploadFailureReason;
 
 export const uploadImages = async (files, folder, onProgress) => uploadAnyFiles(files, folder, onProgress);
 export const uploadFiles = async (files, folder, onProgress) => uploadAnyFiles(files, folder, onProgress);
+
+// ---------------------------------------------------------------------------
+// Cleanup
+// ---------------------------------------------------------------------------
+
+/**
+ * True for a URL that points at an object in this project's Storage bucket —
+ * the only kind of upload we are able to delete.
+ *
+ * Deliberately narrow. The other two kinds of URL a post can hold:
+ *  - `data:` — the base64 fallback. It lives *inside* the Firestore document, so
+ *    deleting the document already removes it. Nothing to do.
+ *  - a Google Drive link — someone else's file in someone's Drive. Removing it
+ *    needs Drive credentials this app does not have and should not have, so it
+ *    is left alone rather than failing noisily.
+ */
+const isStorageUrl = (url) =>
+  typeof url === 'string' && /^https?:\/\/firebasestorage\.googleapis\.com\//i.test(url);
+
+/**
+ * Collects every file URL a record references, across the field names the
+ * different content types use.
+ */
+export const collectFileUrls = (record) => {
+  if (!record) return [];
+  const candidates = [
+    ...(Array.isArray(record.imageUrls) ? record.imageUrls : []),
+    record.imageUrl,
+    record.image,
+    record.fileUrl,
+    record.pdfUrl,
+    record.templateUrl,
+    record.authorImage
+  ];
+  return [...new Set(candidates.filter(Boolean))];
+};
+
+/**
+ * Deletes the Storage objects a record referenced, after that record is gone.
+ *
+ * Failures are swallowed on purpose. This runs *after* the Firestore delete has
+ * already succeeded, so the user's action is complete either way — and the most
+ * common failure is `storage/object-not-found`, which means a previous cleanup
+ * already handled it. Turning that into an error message would report a problem
+ * where none exists.
+ *
+ * @returns {Promise<{deleted: number, skipped: number, failed: number}>}
+ */
+export const deleteRecordFiles = async (record) => {
+  const urls = collectFileUrls(record);
+  const summary = { deleted: 0, skipped: 0, failed: 0 };
+
+  if (!isFirebaseEnabled || !storage || !urls.length) {
+    summary.skipped = urls.length;
+    return summary;
+  }
+
+  await Promise.all(
+    urls.map(async (url) => {
+      if (!isStorageUrl(url)) {
+        summary.skipped += 1;
+        return;
+      }
+      try {
+        // ref() accepts a full download URL and resolves it to the object path.
+        await deleteObject(ref(storage, url));
+        summary.deleted += 1;
+      } catch (error) {
+        if (error?.code === 'storage/object-not-found') {
+          summary.skipped += 1;
+        } else {
+          summary.failed += 1;
+          console.warn('Could not delete stored file:', url, error?.code || error);
+        }
+      }
+    })
+  );
+
+  return summary;
+};
 
 export const downloadDocument = (url, fileName = 'document') => {
   if (!url) {

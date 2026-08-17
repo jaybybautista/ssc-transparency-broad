@@ -48,7 +48,7 @@ import sscLogo from '../../assets/ssc_logo.svg';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
-  const { setIsAdmin } = useContext(AuthContext);
+  const { adminEmail, signOutAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
   const {
     announcements,
@@ -83,14 +83,9 @@ const AdminDashboard = () => {
   const [eventUploadStatus, setEventUploadStatus] = useState('');
   const resDocInputRef = useRef(null);
 
-  useEffect(() => {
-    const isAuth = localStorage.getItem('ssc_admin_auth');
-    if (!isAuth) {
-      navigate('/admin');
-    } else {
-      setIsAdmin(true);
-    }
-  }, [navigate, setIsAdmin]);
+  // No local access check here any more: App.js will not mount this component
+  // unless the signed-in Google account is on the `admins` roster, and
+  // firestore.rules enforces the same thing server-side.
 
   useModalBehaviour(sidebarOpen, () => setSidebarOpen(false));
 
@@ -100,9 +95,8 @@ const AdminDashboard = () => {
     setEventStatusFilter('all');
   }, [activeSection]);
 
-  const handleLogout = () => {
-    setIsAdmin(false);
-    localStorage.removeItem('ssc_admin_auth');
+  const handleLogout = async () => {
+    await signOutAdmin();
     navigate('/admin');
   };
 
@@ -1025,9 +1019,9 @@ const AdminDashboard = () => {
             <h1>{sidebarItems.find(item => item.id === activeSection)?.label || 'Dashboard'}</h1>
           </div>
           <div className="header-right">
-            <div className="admin-user">
-              <div className="user-avatar">A</div>
-              <span className="user-name">Admin</span>
+            <div className="admin-user" title={adminEmail}>
+              <div className="user-avatar">{(adminEmail || 'A').charAt(0).toUpperCase()}</div>
+              <span className="user-name">{adminEmail || 'Admin'}</span>
             </div>
           </div>
         </header>

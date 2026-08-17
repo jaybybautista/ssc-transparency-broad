@@ -1,0 +1,104 @@
+.error-boundary {
+  max-width: 560px;
+  margin: 4rem auto;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-2xl, 1.5rem);
+  box-shadow: var(--shadow-lg);
+}
+
+.error-boundary.compact {
+  margin: 1.5rem auto;
+  padding: 1.75rem 1.5rem;
+}
+
+.error-boundary-icon {
+  font-size: 2.75rem;
+  color: var(--warn-strong-alt);
+  margin-bottom: 1rem;
+}
+
+.error-boundary h2 {
+  font-size: 1.35rem;
+  color: var(--gray-900);
+  margin-bottom: 0.75rem;
+}
+
+.error-boundary > p {
+  color: var(--gray-600);
+  line-height: 1.7;
+  margin-bottom: 1.5rem;
+}
+
+.error-boundary-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.error-boundary-actions .btn-primary,
+.error-boundary-actions .btn-secondary,
+.error-boundary-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 1.15rem;
+  border-radius: var(--ui-control-radius, 10px);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.error-boundary-home {
+  color: var(--accent-text);
+}
+
+.error-boundary-home:hover {
+  text-decoration: underline;
+}
+
+.error-boundary-details {
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--gray-100);
+  text-align: left;
+}
+
+.error-boundary-details summary {
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  cursor: pointer;
+}
+
+.error-boundary-details code {
+  display: block;
+  margin-top: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--surface-inset);
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--gray-700);
+  word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  .error-boundary {
+    margin: 2rem 1rem;
+    padding: 1.75rem 1.25rem;
+  }
+
+  .error-boundary-actions .btn-primary,
+  .error-boundary-actions .btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+}

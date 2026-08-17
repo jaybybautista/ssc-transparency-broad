@@ -237,3 +237,85 @@
     padding: 0.75rem;
   }
 }
+
+/* ---- Google sign-in variants ---- */
+.login-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.login-btn.google {
+  background: var(--surface);
+  color: var(--gray-800);
+  border: 1px solid var(--gray-300);
+}
+
+.login-btn.google:hover:not(:disabled) {
+  border-color: var(--gray-400);
+  box-shadow: var(--shadow-md);
+}
+
+.login-btn.google svg {
+  font-size: 1.25rem;
+}
+
+.login-btn.secondary {
+  background: var(--gray-100);
+  color: var(--gray-700);
+}
+
+.login-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 1.25rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: var(--gray-500);
+}
+
+.login-note svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.login-rejected {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.1rem;
+  background: var(--warn-soft);
+  border: 1px solid var(--warn-border);
+  border-radius: var(--radius-lg);
+  color: var(--warn-strong);
+}
+
+.login-rejected > svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  font-size: 1.2rem;
+}
+
+.login-rejected strong {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.login-rejected p {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.65;
+  color: inherit;
+}
+
+/* Shown while the admin route resolves the session. */
+.admin-route-checking {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  color: var(--gray-500);
+  font-size: 0.95rem;
+}

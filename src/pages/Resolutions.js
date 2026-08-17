@@ -9,6 +9,7 @@ import { uploadImages, uploadFiles, downloadDocument } from '../lib/uploads';
 import DocumentViewerModal from '../components/DocumentViewerModal';
 import ImageCarousel from '../components/ImageCarousel';
 import RichContent from '../components/RichContent';
+import LoadMore from '../components/LoadMore';
 import './Resolutions.css';
 
 const Resolutions = () => {
@@ -371,6 +372,10 @@ const Resolutions = () => {
             </div>
           ))}
         </div>
+
+        {/* The listener fetches a page at a time, so older records
+            need a way to be reached. */}
+        <LoadMore collectionKey="resolutions" label="resolutions" shownCount={resolutions.length} />
       </div>
 
       {/* Modal */}

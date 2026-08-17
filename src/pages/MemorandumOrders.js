@@ -11,6 +11,7 @@ import RichContent from '../components/RichContent';
 import RichTextEditor from '../components/RichTextEditor';
 import { richTextToPlain } from '../components/richText';
 import { AlertSubscribeButton } from '../components/AlertSubscribe';
+import LoadMore from '../components/LoadMore';
 import './MemorandumOrders.css';
 
 const MemorandumOrders = () => {
@@ -240,6 +241,10 @@ const MemorandumOrders = () => {
             </div>
           ))}
         </div>
+
+        {/* The listener fetches a page at a time, so older orders
+            need a way to be reached. */}
+        <LoadMore collectionKey="memorandums" label="orders" shownCount={visibleMemos.length} />
 
         <div className="memo-footer">
           <p>

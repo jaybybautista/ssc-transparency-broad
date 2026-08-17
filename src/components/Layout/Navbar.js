@@ -11,7 +11,7 @@ const Navbar = ({ setSidebarOpen }) => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAdmin, setIsAdmin } = useContext(AuthContext);
+  const { isAdmin } = useContext(AuthContext);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -102,11 +102,10 @@ const Navbar = ({ setSidebarOpen }) => {
           {isAdmin ? (
             <button 
               className="return-user-btn"
-              onClick={() => {
-                setIsAdmin(false);
-                localStorage.removeItem('ssc_admin_auth');
-                navigate('/');
-              }}
+              // Goes to the public board without signing out — an officer
+              // checking how a page looks to students should not have to
+              // authenticate again to get back.
+              onClick={() => navigate('/')}
             >
               <FiArrowLeft />
               <span>Return as User</span>

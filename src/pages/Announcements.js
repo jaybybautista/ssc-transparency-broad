@@ -10,6 +10,7 @@ import ImageCarousel from '../components/ImageCarousel';
 import RichTextEditor from '../components/RichTextEditor';
 import { richTextToPlain } from '../components/richText';
 import { AlertSubscribeButton } from '../components/AlertSubscribe';
+import LoadMore from '../components/LoadMore';
 import './Announcements.css';
 
 const Announcements = () => {
@@ -323,6 +324,14 @@ const Announcements = () => {
               <p>No announcements found matching your criteria.</p>
             </div>
           )}
+
+          {/* The listener fetches a page at a time, so older posts need a way
+              to be reached. */}
+          <LoadMore
+            collectionKey="announcements"
+            label="announcements"
+            shownCount={announcements.length}
+          />
         </div>
       </div>
 
