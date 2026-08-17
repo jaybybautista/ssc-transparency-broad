@@ -1,0 +1,410 @@
+/* About SSC Page Styles */
+
+.about-ssc-page {
+  min-height: 100vh;
+}
+
+/* MV Cards */
+.mv-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  margin-bottom: 4rem;
+}
+
+.mv-card {
+  padding: 2.5rem;
+  border-radius: var(--radius-2xl);
+  position: relative;
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  border-top: 4px solid;
+}
+
+.vision-card {
+  border-top-color: var(--primary-500);
+}
+
+.mission-card {
+  border-top-color: #f59e0b;
+}
+
+.mv-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.vision-card .mv-icon {
+  background: var(--primary-100);
+  color: var(--accent-text);
+}
+
+.mission-card .mv-icon {
+  background: var(--warn-soft);
+  color: #f59e0b;
+}
+
+.mv-card h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--gray-900);
+}
+
+.mv-card p {
+  font-size: 1rem;
+  line-height: 1.7;
+  margin: 0;
+  color: var(--gray-600);
+}
+
+/* Core Values Section */
+.core-values-section {
+  margin-bottom: 4rem;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.5rem;
+  color: var(--gray-900);
+  margin-bottom: 2rem;
+}
+
+.title-icon {
+  color: var(--primary-500);
+}
+
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1.25rem;
+}
+
+.value-card {
+  background: var(--surface);
+  padding: 1.75rem;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+  transition: all var(--transition-base);
+  animation: fadeSlideUp 0.5s ease backwards;
+  border-top: 4px solid var(--primary-500);
+}
+
+.value-card:nth-child(2) { border-top-color: #8b5cf6; }
+.value-card:nth-child(3) { border-top-color: #10b981; }
+.value-card:nth-child(4) { border-top-color: #f59e0b; }
+.value-card:nth-child(5) { border-top-color: #ec4899; }
+
+.value-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.value-card h3 {
+  font-size: 1.1rem;
+  color: var(--gray-900);
+  margin-bottom: 0.5rem;
+}
+
+.value-card p {
+  font-size: 0.85rem;
+  color: var(--gray-600);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Goals Section */
+.goals-section {
+  margin-bottom: 4rem;
+}
+
+.goals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.goal-item {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  background: var(--surface);
+  padding: 1.5rem;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-base);
+  animation: fadeSlideUp 0.5s ease backwards;
+}
+
+.goal-item:hover {
+  transform: translateX(8px);
+  box-shadow: var(--shadow-lg);
+}
+
+.goal-number {
+  flex-shrink: 0;
+  width: 45px;
+  height: 45px;
+  background: var(--bg-gradient);
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+}
+
+.goal-item p {
+  font-size: 1rem;
+  color: var(--gray-700);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Officers Section */
+.officers-section {
+  margin-bottom: 3rem;
+}
+
+.officers-intro {
+  text-align: center;
+  font-size: 1.05rem;
+  color: var(--gray-600);
+  max-width: 700px;
+  margin: 0 auto 2rem;
+  line-height: 1.6;
+}
+
+.division-section {
+  padding: 1.75rem;
+  margin-bottom: 2.5rem;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-2xl);
+}
+
+.division-title {
+  font-size: 1.25rem;
+  color: var(--gray-900);
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--gray-200);
+  padding-bottom: 0.85rem;
+}
+
+/* Officers Grid */
+.officers-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.officer-card {
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  transition: all var(--transition-base);
+  animation: fadeSlideUp 0.5s ease backwards;
+}
+
+.officer-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-xl);
+}
+
+.officer-image {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+}
+
+.officer-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+
+.officer-card:hover .officer-image img {
+  transform: scale(1.05);
+}
+
+.officer-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 50%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 1rem;
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.officer-card:hover .officer-overlay {
+  opacity: 1;
+}
+
+.overlay-btn {
+  width: 40px;
+  height: 40px;
+  background: var(--surface);
+  color: var(--accent-text);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  transition: all var(--transition-fast);
+}
+
+.overlay-btn:hover {
+  background: var(--primary-600);
+  color: white;
+  transform: scale(1.1);
+}
+
+.officer-info {
+  padding: 1.25rem;
+}
+
+.officer-position {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--accent-text);
+  background: var(--primary-50);
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.officer-name {
+  font-size: 1.1rem;
+  color: var(--gray-900);
+  margin-bottom: 0.25rem;
+}
+
+.officer-course {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.officer-year {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  margin: 0 0 0.75rem 0;
+}
+
+.officer-quote {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--gray-600);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* SSC Message */
+.ssc-message {
+  background: linear-gradient(135deg, var(--primary-50) 0%, var(--secondary-50) 100%);
+  padding: 2.5rem;
+  border-radius: var(--radius-2xl);
+  text-align: center;
+  border: 1px solid var(--primary-100);
+}
+
+.ssc-message h3 {
+  font-size: 1.5rem;
+  color: var(--accent-text-deep);
+  margin-bottom: 1rem;
+}
+
+.ssc-message p {
+  font-size: 1rem;
+  color: var(--gray-700);
+  max-width: 800px;
+  margin: 0 auto 1rem;
+  line-height: 1.7;
+}
+
+.ssc-message p:last-child {
+  margin-bottom: 0;
+}
+
+/* Animation */
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .values-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .officers-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .mv-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .officers-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .values-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .division-section {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .mv-card {
+    padding: 2rem;
+  }
+  
+  .values-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .officers-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .ssc-message {
+    padding: 2rem;
+  }
+}

@@ -1,0 +1,143 @@
+/* Blog-style typography shared by the editor surface and the public reading view. */
+.rich-content {
+  color: var(--gray-700, #374151);
+  font-size: 1.02rem;
+  line-height: 1.75;
+  word-break: break-word;
+}
+
+.rich-content > *:first-child {
+  margin-top: 0;
+}
+
+.rich-content > *:last-child {
+  margin-bottom: 0;
+}
+
+.rich-content p {
+  margin: 0 0 1.1em;
+}
+
+.rich-content h1,
+.rich-content h2,
+.rich-content h3,
+.rich-content h4 {
+  color: var(--gray-900, #111827);
+  line-height: 1.3;
+  margin: 1.8em 0 0.6em;
+  font-weight: 700;
+}
+
+.rich-content h1 { font-size: 1.75rem; }
+.rich-content h2 { font-size: 1.45rem; }
+.rich-content h3 { font-size: 1.2rem; }
+.rich-content h4 { font-size: 1.05rem; }
+
+.rich-content ul,
+.rich-content ol {
+  margin: 0 0 1.1em;
+  padding-left: 1.6em;
+}
+
+.rich-content li {
+  margin-bottom: 0.45em;
+}
+
+.rich-content li::marker {
+  color: var(--primary-500, #068df8);
+}
+
+.rich-content blockquote {
+  margin: 1.4em 0;
+  padding: 0.85em 1.2em;
+  border-left: 4px solid var(--primary-500, #068df8);
+  background: var(--gray-50, #f9fafb);
+  border-radius: 0 8px 8px 0;
+  color: var(--gray-600, #4b5563);
+  font-style: italic;
+}
+
+.rich-content blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-content a {
+  color: var(--accent-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.rich-content a:hover {
+  color: var(--accent-text-strong);
+}
+
+.rich-content strong,
+.rich-content b {
+  color: var(--gray-900, #111827);
+  font-weight: 700;
+}
+
+.rich-content code {
+  background: var(--gray-100, #f3f4f6);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.rich-content pre {
+  background: var(--gray-900, #111827);
+  color: var(--gray-50);
+  padding: 1em 1.2em;
+  border-radius: 10px;
+  overflow-x: auto;
+  margin: 0 0 1.1em;
+}
+
+.rich-content pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+.rich-content hr {
+  border: none;
+  border-top: 1px solid var(--gray-200, #e5e7eb);
+  margin: 2em 0;
+}
+
+.rich-content mark {
+  background: var(--warn-soft);
+  padding: 0.1em 0.2em;
+  border-radius: 3px;
+}
+
+/* Compact variant for card previews */
+.rich-content.rich-preview {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.rich-content.rich-preview h1,
+.rich-content.rich-preview h2,
+.rich-content.rich-preview h3,
+.rich-content.rich-preview h4 {
+  font-size: 1rem;
+  margin: 0 0 0.4em;
+}
+
+.rich-content.rich-preview p,
+.rich-content.rich-preview ul,
+.rich-content.rich-preview ol,
+.rich-content.rich-preview blockquote {
+  margin: 0 0 0.5em;
+}
+
+.rich-content.rich-preview blockquote {
+  padding: 0.2em 0.6em;
+  border-radius: 0 4px 4px 0;
+}

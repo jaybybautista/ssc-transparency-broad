@@ -1,0 +1,17 @@
+.officer-image-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  color: #4f46e5;
+  font-size: 4rem;
+}
+
+/* Dark mode. This component is shared by the public and admin sides, so the
+   placeholder stays identical on both by construction. */
+:root[data-theme='dark'] .officer-image-fallback {
+  background: linear-gradient(135deg, #1e2547 0%, #262f5c 100%);
+  color: #9aa6f0;
+}

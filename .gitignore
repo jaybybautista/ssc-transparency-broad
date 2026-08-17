@@ -1,0 +1,44 @@
+# Dependencies — reinstalled from package-lock.json with `npm install`.
+# Committing these was what pushed the repository over GitHub's size limit.
+/node_modules
+/.pnp
+.pnp.js
+
+# Production build — regenerated with `npm run build`
+/build
+
+# Local environment. .env holds this project's Firebase configuration.
+# Those particular values are not secret (they ship inside the public JavaScript
+# bundle either way), but keeping .env untracked means the day someone adds a
+# real secret here it does not land in the repository.
+# .env.example stays tracked as the template.
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+/coverage
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Editor and OS cruft
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Firebase CLI local state
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+*-debug.log
+.firebaserc.local

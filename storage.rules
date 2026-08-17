@@ -1,0 +1,41 @@
+rules_version = '2';
+
+// =============================================================================
+// Firebase Storage rules for the SSC Virtual Board.
+//
+// Deploy with:  firebase deploy --only storage
+//
+// Uploaded documents and photos are meant to be publicly readable — they are
+// published on the site. Writes are open for the same reason the Firestore
+// content rules are: the admin login is a browser-side localStorage flag that
+// Storage cannot verify. See SECURITY.md for how to close that gap.
+// =============================================================================
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Folders the app writes to.
+    match /{folder}/{fileName} {
+      allow read: if true;
+
+      allow write: if
+        // 25MB ceiling, matching MAX_FILE_SIZE_MB in src/lib/uploads.js
+        request.resource.size < 25 * 1024 * 1024
+        // only the document and image types the forms accept
+        && (
+          request.resource.contentType.matches('application/pdf')
+          || request.resource.contentType.matches('image/.*')
+          || request.resource.contentType.matches('application/msword')
+          || request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.*')
+          || request.resource.contentType.matches('application/vnd.ms-.*')
+        );
+
+      allow delete: if false;
+    }
+
+    // Deny anything outside the expected folder structure.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

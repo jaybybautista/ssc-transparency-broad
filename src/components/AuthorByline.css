@@ -1,0 +1,106 @@
+.author-byline {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.author-avatar {
+  position: relative;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+}
+
+.author-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.author-avatar-fallback {
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  color: #4f46e5;
+}
+
+.author-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.author-name {
+  font-weight: 700;
+  color: var(--gray-900, #111827);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.author-sub {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--gray-500, #6b7280);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.author-dot {
+  opacity: 0.6;
+}
+
+/* ---- sizes ---- */
+.author-byline-sm .author-avatar {
+  width: 30px;
+  height: 30px;
+}
+
+.author-byline-sm .author-avatar-fallback {
+  font-size: 0.85rem;
+}
+
+.author-byline-sm .author-name {
+  font-size: 0.82rem;
+}
+
+.author-byline-sm .author-sub {
+  font-size: 0.75rem;
+}
+
+.author-byline-md .author-avatar {
+  width: 46px;
+  height: 46px;
+}
+
+.author-byline-md .author-avatar-fallback {
+  font-size: 1.25rem;
+}
+
+.author-byline-md .author-name {
+  font-size: 0.98rem;
+}
+
+.author-byline-md .author-sub {
+  font-size: 0.85rem;
+}
+
+/* Byline sitting under a blog article headline.
+   The meta row below it supplies the divider, so no border here. */
+.blog-article-byline {
+  margin-bottom: 1.1rem;
+}
+
+/* Byline on a list/grid card */
+.mom-card-byline,
+.report-card-byline {
+  margin-bottom: 0.9rem;
+}

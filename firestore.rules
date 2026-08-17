@@ -1,0 +1,222 @@
+rules_version = '2';
+
+// =============================================================================
+// PSU-UCC SSC Virtual Board — Firestore security rules
+//
+// These rules are the ONLY thing that actually protects the data. The Firebase
+// API key is shipped inside the public JavaScript bundle, so anyone can point a
+// script at this project. Whatever the UI does is irrelevant to an attacker —
+// only the checks below run on Google's servers and cannot be bypassed.
+//
+// Deploy with:   firebase deploy --only firestore:rules
+// =============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- helpers ----------------------------------------------------------
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Google accounts always come back verified; this blocks unverified
+    // email/password accounts if that provider is ever switched on.
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function signedInEmail() {
+      return isSignedIn() ? request.auth.token.email.lower() : '';
+    }
+
+    // Voting is restricted to these Google Workspace domains.
+    // To allow any Google account instead, change isEligibleVoter() to
+    // simply `return isVerified();` and drop the domain check.
+    function allowedVoteDomains() {
+      return ['psu.edu.ph', 'students.psu.edu.ph'];
+    }
+
+    function isEligibleVoter() {
+      return isVerified()
+        && signedInEmail().split('@')[1] in allowedVoteDomains();
+    }
+
+    function isValidChoice(choice) {
+      return choice in ['for', 'against', 'abstain'];
+    }
+
+    // An SSC officer who has a document in /admins keyed by their Google uid.
+    // This is the only identity the server can actually verify — the admin
+    // username/password screen is browser-side and invisible to these rules.
+    function isSscAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // ---- admin roster --------------------------------------------------
+    // Add a document here (id = the officer's Firebase Auth uid) to grant
+    // access to student tickets and suggestions. Create them from the Firebase
+    // console; the app can never write to this collection.
+    match /admins/{uid} {
+      allow get: if isSignedIn() && request.auth.uid == uid;
+      allow list, write: if false;
+    }
+
+    // ---- student tickets ----------------------------------------------
+    //
+    // Tickets carry names, emails and formal grievances, so they must not be
+    // browsable. The document id IS the unguessable reference code, which lets
+    // us allow a single-document `get` for status tracking while denying
+    // `list` to everyone except admins.
+    match /tickets/{ticketId} {
+      allow get: if true;
+      allow list: if isSscAdmin();
+
+      allow create: if
+        ticketId == request.resource.data.referenceCode
+        && request.resource.data.status == 'new'
+        && request.resource.data.adminResponse == ''
+        && request.resource.data.subject is string
+        && request.resource.data.subject.size() > 0
+        && request.resource.data.subject.size() <= 200
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 5000
+        && request.resource.data.studentName is string
+        && request.resource.data.studentName.size() <= 120
+        && request.resource.data.studentEmail is string
+        && request.resource.data.studentEmail.size() <= 200;
+
+      // Only officers may triage or reply.
+      allow update, delete: if isSscAdmin();
+    }
+
+    // ---- anonymous suggestion box -------------------------------------
+    //
+    // Deliberately write-only for students: they cannot read back even their
+    // own submission, which is what keeps the box genuinely anonymous — there
+    // is no identifier stored to tie a suggestion to a person.
+    match /suggestions/{suggestionId} {
+      allow get, list: if isSscAdmin();
+
+      allow create: if
+        request.resource.data.status == 'new'
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 5000
+        && request.resource.data.category is string
+        // Reject any attempt to attach identifying fields.
+        && !request.resource.data.keys().hasAny(['uid', 'email', 'studentName', 'studentEmail', 'name']);
+
+      allow update, delete: if isSscAdmin();
+    }
+
+    // ---- email alert subscribers ---------------------------------------
+    //
+    // The document id is the lowercased email address. That makes the roster
+    // self-deduplicating and lets a student unsubscribe themselves without an
+    // account or a mailed-out token.
+    //
+    // The trade-off of having no server: create/update/delete have to be open,
+    // because the person subscribing is not signed in. So somebody who knows a
+    // classmate's address could subscribe or unsubscribe them. Reading the
+    // roster is the part that matters, and that is admin-only — nobody can
+    // harvest the list of student emails, and the validation below keeps the
+    // documents from being used as free storage.
+    match /subscribers/{email} {
+      allow get, list: if isSscAdmin();
+
+      allow create, update: if
+        email == request.resource.data.email
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 200
+        && request.resource.data.email.matches('^[^@\\s]+@[^@\\s]+[.][^@\\s]+$')
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 120
+        && request.resource.data.program is string
+        && request.resource.data.program.size() <= 120
+        && request.resource.data.topics is map
+        && request.resource.data.topics.size() <= 12
+        && request.resource.data.keys().hasOnly(
+             ['email', 'name', 'program', 'topics', 'createdAt', 'updatedAt']
+           );
+
+      // Self-service opt-out, plus admin removal.
+      allow delete: if true;
+    }
+
+    // ---- resolution votes -------------------------------------------------
+    //
+    // One document per account per resolution, with the document id pinned to
+    // the caller's own uid. This is what makes double voting impossible:
+    //   * the id must equal  <resolutionId>__<your uid>
+    //   * so a second vote overwrites your first rather than adding a new one
+    //   * and you cannot write a document in anybody else's name
+    match /resolutionVotes/{voteId} {
+
+      // Tallies are public so the counts can be shown on the site.
+      allow read: if true;
+
+      allow create, update: if isEligibleVoter()
+        // the document id must be derived from the caller's own uid
+        && voteId == request.resource.data.resolutionId + '__' + request.auth.uid
+        && request.resource.data.uid == request.auth.uid
+        // the recorded email must be the one they actually signed in with
+        && request.resource.data.email.lower() == signedInEmail()
+        && isValidChoice(request.resource.data.choice)
+        // the resolution being voted on has to exist
+        && exists(/databases/$(database)/documents/resolutions/$(request.resource.data.resolutionId))
+        // on update, the existing vote must already belong to this caller
+        // (resource == null means the document does not exist yet)
+        && (resource == null || resource.data.uid == request.auth.uid);
+
+      // A student may withdraw only their own vote.
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // ---- resolutions ------------------------------------------------------
+    //
+    // Public content is world-readable. Writes are left open below ONLY because
+    // this project has no admin authentication on the server side — the admin
+    // login is a localStorage flag, which a server cannot verify.
+    //
+    // >>> SEE THE NOTE AT THE BOTTOM OF THIS FILE. <<<
+    match /resolutions/{docId} {
+      allow read: if true;
+      allow write: if true; // TODO: tighten once admins sign in with Firebase Auth
+    }
+
+    // ---- other public collections ----------------------------------------
+    match /announcements/{docId}    { allow read: if true; allow write: if true; }
+    match /events/{docId}           { allow read: if true; allow write: if true; }
+    match /officers/{docId}         { allow read: if true; allow write: if true; }
+    match /meetings/{docId}         { allow read: if true; allow write: if true; }
+    match /accomplishments/{docId}  { allow read: if true; allow write: if true; }
+    match /requestTypes/{docId}     { allow read: if true; allow write: if true; }
+    match /memorandums/{docId}      { allow read: if true; allow write: if true; }
+    match /narrativeReports/{docId} { allow read: if true; allow write: if true; }
+    match /constitution/{docId}     { allow read: if true; allow write: if true; }
+
+    // Deny anything not explicitly listed above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+// =============================================================================
+// IMPORTANT — what these rules do and do not protect
+//
+// PROTECTED: resolution voting.
+//   Votes require a real, verified Google sign-in, are pinned to the caller's
+//   own uid, and cannot be duplicated, forged for another account, or edited by
+//   anyone else. This holds even against a script talking straight to the API.
+//
+// NOT YET PROTECTED: admin content (announcements, resolutions, officers, ...).
+//   The admin login is a hardcoded username/password checked in the browser and
+//   stored as a localStorage flag. Firestore cannot verify any of that, so the
+//   content collections above are still writable by anyone who finds the API
+//   key. Locking them down requires admins to sign in through Firebase Auth so
+//   the rules can check a real identity — see SECURITY.md.
+// =============================================================================

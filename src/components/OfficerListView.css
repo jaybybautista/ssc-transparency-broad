@@ -1,0 +1,105 @@
+/* List layout for the officers grid.
+   Applied by adding .officers-grid.is-list, so the existing grid rules stay
+   untouched and both officer pages share one definition. */
+.officers-grid.is-list {
+  display: flex !important;
+  flex-direction: column;
+  gap: 0.85rem !important;
+}
+
+.officers-grid.is-list .officer-card {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.9rem 1.15rem;
+}
+
+.officers-grid.is-list .officer-card:hover {
+  transform: translateX(4px);
+}
+
+.officers-grid.is-list .officer-image {
+  width: 68px;
+  height: 68px;
+  flex-shrink: 0;
+  aspect-ratio: auto;
+  border-radius: 50%;
+}
+
+.officers-grid.is-list .officer-image img,
+.officers-grid.is-list .officer-image-fallback {
+  border-radius: 50%;
+}
+
+.officers-grid.is-list .officer-image-fallback {
+  font-size: 1.8rem;
+}
+
+/* The hover-reveal email overlay doesn't fit a small round thumbnail */
+.officers-grid.is-list .officer-overlay {
+  display: none;
+}
+
+.officers-grid.is-list .officer-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0 !important;
+  text-align: left !important;
+}
+
+.officers-grid.is-list .officer-position {
+  order: 2;
+  font-size: 0.82rem;
+}
+
+.officers-grid.is-list .officer-name {
+  order: 1;
+  font-size: 1.05rem;
+  margin: 0 !important;
+}
+
+.officers-grid.is-list .officer-course,
+.officers-grid.is-list .officer-year {
+  order: 3;
+  font-size: 0.82rem;
+  margin: 0 !important;
+}
+
+.officers-grid.is-list .officer-quote {
+  order: 4;
+  margin: 0.2rem 0 0 !important;
+  font-size: 0.82rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.officers-grid.is-list .admin-actions {
+  flex-shrink: 0;
+  width: auto;
+  margin: 0;
+  padding: 0 !important;
+  border: none !important;
+}
+
+@media (max-width: 640px) {
+  .officers-grid.is-list .officer-card {
+    gap: 0.85rem;
+    padding: 0.8rem;
+  }
+
+  .officers-grid.is-list .officer-image {
+    width: 54px;
+    height: 54px;
+  }
+
+  .officers-grid.is-list .officer-quote {
+    display: none;
+  }
+}

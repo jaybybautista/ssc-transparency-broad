@@ -1,0 +1,92 @@
+.rte {
+  border: 1px solid var(--gray-300, #d1d5db);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.rte:focus-within {
+  border-color: var(--primary-500, #068df8);
+  box-shadow: 0 0 0 3px rgba(6, 141, 248, 0.12);
+}
+
+.rte-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem;
+  background: var(--gray-50, #f9fafb);
+  border-bottom: 1px solid var(--gray-200, #e5e7eb);
+}
+
+.rte-group {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding-right: 0.35rem;
+  margin-right: 0.15rem;
+  border-right: 1px solid var(--gray-200, #e5e7eb);
+}
+
+.rte-group:last-child {
+  border-right: none;
+  margin-right: 0;
+  padding-right: 0;
+}
+
+.rte-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--gray-700, #374151);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.rte-btn:hover {
+  background: var(--surface);
+  border-color: var(--gray-300, #d1d5db);
+}
+
+.rte-btn:active {
+  background: var(--gray-100, #f3f4f6);
+}
+
+.rte-surface {
+  position: relative;
+}
+
+.rte-placeholder {
+  position: absolute;
+  top: 0.85rem;
+  left: 0.9rem;
+  color: var(--gray-400, #9ca3af);
+  pointer-events: none;
+  font-size: 0.95rem;
+}
+
+/* The editing surface reuses .rich-content so what you type looks like what gets published. */
+.rte-input {
+  padding: 0.85rem 0.9rem;
+  outline: none;
+  overflow-y: auto;
+  max-height: 45vh;
+}
+
+/* Editor-specific overrides so the admin form field stays compact */
+.admin-modal-form .rte-input {
+  font-size: 0.95rem;
+}
+
+.admin-modal-form .rte {
+  width: 100%;
+}

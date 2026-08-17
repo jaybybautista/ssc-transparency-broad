@@ -1,0 +1,282 @@
+/* ---- collapsed state ---- */
+.calendar-sync-collapsed {
+  margin-top: 1.75rem;
+}
+
+.sync-open-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--gray-200, #e5e7eb);
+  border-radius: 16px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.sync-open-btn:hover {
+  border-color: var(--primary-300, #66b7ff);
+  box-shadow: 0 6px 18px rgba(6, 141, 248, 0.12);
+  transform: translateY(-1px);
+}
+
+.sync-open-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.sync-open-text strong {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--gray-900, #111827);
+}
+
+.sync-open-text small {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--gray-500, #6b7280);
+}
+
+.sync-open-btn > svg:last-child {
+  flex-shrink: 0;
+  color: var(--gray-400, #9ca3af);
+}
+
+/* ---- expanded panel ---- */
+.calendar-sync-panel {
+  padding: 1.35rem 1.5rem;
+  margin-top: 1.75rem;
+  background: var(--sync-panel-bg, linear-gradient(135deg, #f8fbff 0%, #f4f7ff 100%));
+  border: 1px solid var(--sync-panel-border, #dbeafe);
+  border-radius: 16px;
+}
+
+.sync-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  margin-bottom: 1.1rem;
+}
+
+.sync-close-btn {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--gray-200, #e5e7eb);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--gray-500, #6b7280);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.sync-close-btn:hover {
+  color: var(--gray-800, #1f2937);
+  border-color: var(--gray-300, #d1d5db);
+}
+
+.sync-icon {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: linear-gradient(135deg, var(--primary-500, #068df8), var(--primary-700, #025a9e));
+  color: #fff;
+  font-size: 1.2rem;
+}
+
+.sync-head-text h3 {
+  font-size: 1.08rem;
+  color: var(--gray-900, #111827);
+  margin: 0 0 0.25rem;
+}
+
+.sync-head-text p {
+  margin: 0;
+  font-size: 0.87rem;
+  line-height: 1.65;
+  color: var(--gray-600, #4b5563);
+  max-width: 60ch;
+}
+
+/* ---- controls ---- */
+.sync-controls {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.sync-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 170px;
+}
+
+.sync-field label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gray-500, #6b7280);
+}
+
+.sync-field select {
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--gray-300, #d1d5db);
+  border-radius: 9px;
+  background: var(--surface);
+  font-family: inherit;
+  font-size: 0.87rem;
+  color: var(--gray-800, #1f2937);
+  cursor: pointer;
+}
+
+.sync-field select:focus {
+  outline: none;
+  border-color: var(--primary-500, #068df8);
+  box-shadow: 0 0 0 3px rgba(6, 141, 248, 0.12);
+}
+
+.sync-field small {
+  font-size: 0.74rem;
+  color: var(--gray-500, #6b7280);
+}
+
+.sync-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.1rem;
+  padding: 0.65rem 1.25rem;
+  border: none;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--primary-500, #068df8), var(--primary-700, #025a9e));
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(6, 141, 248, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sync-download-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(6, 141, 248, 0.32);
+}
+
+.sync-download-btn:disabled {
+  background: var(--gray-300, #d1d5db);
+  box-shadow: none;
+  cursor: default;
+}
+
+/* ---- feedback + help ---- */
+.sync-confirmation {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  margin: 1rem 0 0;
+  padding: 0.65rem 0.85rem;
+  background: var(--success-soft);
+  border: 1px solid var(--success-border);
+  border-radius: 9px;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--success-strong);
+}
+
+.sync-confirmation svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.sync-help-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--accent-text);
+  cursor: pointer;
+}
+
+.sync-help-toggle svg:last-child {
+  transition: transform 0.15s ease;
+}
+
+.sync-help-toggle svg:last-child.rotated {
+  transform: rotate(180deg);
+}
+
+.sync-help {
+  margin-top: 0.9rem;
+  padding: 1rem 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--gray-200, #e5e7eb);
+  border-radius: 12px;
+}
+
+.sync-help-item + .sync-help-item {
+  margin-top: 0.9rem;
+}
+
+.sync-help-item h4 {
+  font-size: 0.86rem;
+  color: var(--gray-900, #111827);
+  margin: 0 0 0.25rem;
+}
+
+.sync-help-item p {
+  margin: 0;
+  font-size: 0.83rem;
+  line-height: 1.65;
+  color: var(--gray-600, #4b5563);
+}
+
+.sync-help-note {
+  margin: 1rem 0 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--gray-100, #f3f4f6);
+  font-size: 0.79rem;
+  line-height: 1.6;
+  color: var(--gray-500, #6b7280);
+}
+
+@media (max-width: 640px) {
+  .calendar-sync-panel {
+    padding: 1.1rem 1.15rem;
+  }
+
+  .sync-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sync-field {
+    min-width: 0;
+  }
+
+  .sync-download-btn {
+    margin-top: 0.5rem;
+    justify-content: center;
+  }
+}

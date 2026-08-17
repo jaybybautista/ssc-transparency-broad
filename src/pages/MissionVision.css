@@ -1,0 +1,232 @@
+/* Mission Vision Page Styles */
+
+.mission-vision-page {
+  min-height: 100vh;
+}
+
+/* MV Cards */
+.mv-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  margin-bottom: 4rem;
+}
+
+.mv-card {
+  padding: 3rem;
+  border-radius: var(--radius-2xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.vision-card {
+  background: var(--bg-gradient);
+  color: white;
+}
+
+.mission-card {
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  color: var(--gray-900);
+}
+
+.mv-icon {
+  width: 70px;
+  height: 70px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.mv-card h2 {
+  font-size: 1.75rem;
+  margin-bottom: 1rem;
+}
+
+.vision-card h2 { color: white; }
+.mission-card h2 { color: var(--gray-900); }
+
+.mv-card p {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.vision-card p { color: rgba(255, 255, 255, 0.95); }
+.mission-card p { color: var(--gray-800); }
+
+/* Core Values Section */
+.core-values-section {
+  margin-bottom: 4rem;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.5rem;
+  color: var(--gray-900);
+  margin-bottom: 2rem;
+}
+
+.title-icon {
+  color: var(--primary-500);
+}
+
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1.25rem;
+}
+
+.value-card {
+  background: var(--surface);
+  padding: 1.75rem;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+  transition: all var(--transition-base);
+  animation: fadeSlideUp 0.5s ease backwards;
+  border-top: 4px solid var(--primary-500);
+}
+
+.value-card:nth-child(2) { border-top-color: #8b5cf6; }
+.value-card:nth-child(3) { border-top-color: #10b981; }
+.value-card:nth-child(4) { border-top-color: #f59e0b; }
+.value-card:nth-child(5) { border-top-color: #ec4899; }
+
+.value-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.value-card h3 {
+  font-size: 1.1rem;
+  color: var(--gray-900);
+  margin-bottom: 0.5rem;
+}
+
+.value-card p {
+  font-size: 0.85rem;
+  color: var(--gray-600);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Goals Section */
+.goals-section {
+  margin-bottom: 3rem;
+}
+
+.goals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.goal-item {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  background: var(--surface);
+  padding: 1.5rem;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-base);
+  animation: fadeSlideUp 0.5s ease backwards;
+}
+
+.goal-item:hover {
+  transform: translateX(8px);
+  box-shadow: var(--shadow-lg);
+}
+
+.goal-number {
+  flex-shrink: 0;
+  width: 45px;
+  height: 45px;
+  background: var(--bg-gradient);
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+}
+
+.goal-item p {
+  font-size: 1rem;
+  color: var(--gray-700);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Commitment Banner */
+.commitment-banner {
+  background: linear-gradient(135deg, var(--primary-50) 0%, var(--secondary-50) 100%);
+  padding: 2.5rem;
+  border-radius: var(--radius-2xl);
+  text-align: center;
+  border: 1px solid var(--primary-100);
+}
+
+.commitment-banner h3 {
+  font-size: 1.5rem;
+  color: var(--accent-text-deep);
+  margin-bottom: 1rem;
+}
+
+.commitment-banner p {
+  font-size: 1.05rem;
+  color: var(--gray-700);
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+/* Animation */
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .mv-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .values-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .mv-card {
+    padding: 2rem;
+  }
+  
+  .values-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .goal-item {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .commitment-banner {
+    padding: 2rem;
+  }
+}

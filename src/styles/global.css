@@ -1,0 +1,1453 @@
+/* ========================================
+   SSC VIRTUAL BOARD - Global Styles
+   Modern & Professional Design System
+======================================== */
+
+:root {
+  /* Primary Colors - PSU Blue */
+  --primary-50: #e6f3ff;
+  --primary-100: #cce7ff;
+  --primary-200: #99cfff;
+  --primary-300: #66b7ff;
+  --primary-400: #339fff;
+  --primary-500: #068DF8;
+  --primary-600: #0570c6;
+  --primary-700: #045494;
+  --primary-800: #033863;
+  --primary-900: #020C30;
+
+  /* Secondary Colors - PSU Gold */
+  --secondary-50: #fffdf5;
+  --secondary-100: #fff9e6;
+  --secondary-200: #ffefb3;
+  --secondary-300: #FFD966;
+  --secondary-400: #FCC101;
+  --secondary-500: #D19D13;
+  --secondary-600: #b8890f;
+  --secondary-700: #9a720c;
+
+  /* Status Colors */
+  --status-planned: #068DF8;      /* Blue */
+  --status-pending: #FCC101;      /* Gold/Yellow */
+  --status-approved: #10b981;     /* Green */
+  --status-cancelled: #ef4444;    /* Red */
+
+  /* Neutral Colors */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  /* Backgrounds */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-dark: #020C30;
+  --bg-gradient: linear-gradient(135deg, #020C30 0%, #068DF8 100%);
+  --bg-gradient-gold: linear-gradient(135deg, #D19D13 0%, #FFD966 100%);
+
+  /* ---- Themeable surfaces ----------------------------------------------
+     Every card, modal and panel paints itself with --surface rather than a
+     literal white, which is what lets the dark palette at the bottom of this
+     file flip the whole app by redefining a handful of values. In light mode
+     these are exactly the colours they replaced, so light mode is unchanged. */
+  --surface: #ffffff;
+  --surface-raised: #ffffff;      /* sits on top of a --gray-50 panel */
+  --surface-inset: #f9fafb;       /* a well inside a card */
+  --border-color: #e5e7eb;
+
+  /* Soft/strong pairs for callouts, chips and status pills. "Soft" is the
+     background, "strong" the text and icon colour on top of it. */
+  --info-soft: #eff6ff;
+  --info-soft-alt: #dbeafe;
+  --info-border: #bfdbfe;
+  --info-strong: #1e40af;
+  --info-strong-alt: #1d4ed8;
+
+  --success-soft: #ecfdf5;
+  --success-soft-alt: #dcfce7;
+  --success-border: #a7f3d0;
+  --success-strong: #065f46;
+  --success-strong-alt: #15803d;
+
+  --warn-soft: #fef3c7;
+  --warn-border: #fde68a;
+  --warn-strong: #92400e;
+  --warn-strong-alt: #b45309;
+
+  --danger-soft: #fee2e2;
+  --danger-border: #fecaca;
+  --danger-strong: #b91c1c;
+  --danger-strong-alt: #dc2626;
+
+  /* Blue used as TEXT, kept separate from the same blues used as button and
+     header BACKGROUNDS. Accent text has to lighten under dark mode; a button
+     painted --primary-600 with white text on it must not. */
+  --accent-text: var(--primary-600);
+  --accent-text-strong: var(--primary-700);
+  /* --primary-800 and --primary-900 both collapse into this: as text they are
+     indistinguishable navy, and dark mode needs a single light replacement. */
+  --accent-text-deep: var(--primary-900);
+
+  /* Surfaces that must stay dark in BOTH themes, so they cannot be built from
+     the neutral ramp — that ramp inverts under dark mode. */
+  --footer-bg: #111827;
+  --navbar-bg: rgba(255, 255, 255, 0.95);
+  --navbar-bg-scrolled: rgba(255, 255, 255, 0.98);
+  --sync-panel-bg: linear-gradient(135deg, #f8fbff 0%, #f4f7ff 100%);
+  --sync-panel-border: #dbeafe;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(2, 12, 48, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(2, 12, 48, 0.1), 0 2px 4px -1px rgba(2, 12, 48, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(2, 12, 48, 0.1), 0 4px 6px -2px rgba(2, 12, 48, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(2, 12, 48, 0.1), 0 10px 10px -5px rgba(2, 12, 48, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(2, 12, 48, 0.25);
+
+  /* Typography */
+  --font-primary: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-secondary: 'Alexandria', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-serif: 'Libre Baskerville', Georgia, serif;
+
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  /* Spacing */
+  --navbar-height: 70px;
+  --sidebar-width: 280px;
+  --container-max: 1400px;
+  --ui-control-height: 42px;
+  --ui-control-radius: 10px;
+  --ui-card-radius: var(--radius-xl);
+}
+
+/* Reset & Base Styles */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--font-secondary);
+  background-color: var(--bg-secondary);
+  color: var(--gray-800);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-primary);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--accent-text-deep);
+}
+
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.25rem; }
+h5 { font-size: 1.125rem; }
+h6 { font-size: 1rem; }
+
+/* Serif headings for special sections */
+.heading-serif {
+  font-family: var(--font-serif);
+}
+
+p {
+  margin-bottom: 1rem;
+  color: var(--gray-600);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: color var(--transition-fast);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+ul, ol {
+  list-style: none;
+}
+
+/* App Layout */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  padding-top: var(--navbar-height);
+  min-height: calc(100vh - var(--navbar-height));
+}
+
+/* Container */
+.container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Utility Classes */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-1 { gap: 0.25rem; }
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 0.75rem; }
+.gap-4 { gap: 1rem; }
+.gap-6 { gap: 1.5rem; }
+.gap-8 { gap: 2rem; }
+
+/* Card Component */
+.card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  padding: 1.5rem;
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+/* Button Styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--bg-gradient);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-secondary {
+  background: var(--bg-gradient-gold);
+  color: var(--gray-900);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--primary-600);
+  color: var(--accent-text);
+}
+
+.btn-outline:hover {
+  background: var(--primary-600);
+  color: white;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--gray-700);
+}
+
+.btn-ghost:hover {
+  background: var(--gray-100);
+}
+
+/* Badge Styles */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.badge-planned {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--status-planned);
+}
+
+.badge-pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--status-pending);
+}
+
+.badge-approved {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--status-approved);
+}
+
+/* Section Styles */
+.section {
+  padding: 4rem 0;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.section-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--gray-900);
+  margin-bottom: 0.75rem;
+}
+
+.section-subtitle {
+  font-size: 1.125rem;
+  color: var(--gray-500);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Page Header */
+.page-header {
+  background: var(--bg-gradient);
+  padding: 4rem 0;
+  margin-bottom: 3rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.page-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.page-header-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: white;
+}
+
+.page-header h1 {
+  color: white;
+  font-size: 2.75rem;
+  margin-bottom: 1rem;
+}
+
+.page-header p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.125rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Row of header buttons ("Notify me", admin "Add ...") under the page intro. */
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+
+.page-header-actions:empty {
+  margin-top: 0;
+}
+
+/* Page stylesheets give .admin-add-btn its own top margin, which would offset
+   it from the buttons beside it once it sits inside this flex row. */
+.page-header-actions .admin-add-btn {
+  margin-top: 0;
+}
+
+/* Grid Layouts */
+.grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 1024px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+}
+
+/* Form Styles */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: 0.5rem;
+}
+
+.form-input,
+.form-textarea,
+.form-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  background: var(--bg-primary);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+/* Unified admin modal form controls */
+.admin-modal-overlay {
+  background: rgba(15, 23, 42, 0.65);
+}
+
+.admin-modal {
+  border: 1px solid var(--gray-200);
+}
+
+.admin-modal-form .form-group input,
+.admin-modal-form .form-group textarea,
+.admin-modal-form .form-group select {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--gray-300);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  background: #fff;
+  color: var(--gray-800);
+}
+
+.admin-modal-form .form-group input:focus,
+.admin-modal-form .form-group textarea:focus,
+.admin-modal-form .form-group select:focus {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px rgba(6, 141, 248, 0.12);
+}
+
+/* Unified readable modal system (no glass/transparency) */
+.modal-overlay,
+.admin-modal-overlay {
+  background: rgba(15, 23, 42, 0.82) !important;
+  backdrop-filter: none !important;
+}
+
+.modal-content,
+.admin-modal {
+  background: var(--surface) !important;
+  border: 1px solid var(--gray-200) !important;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.28) !important;
+}
+
+.modal-header,
+.admin-modal-header {
+  background: var(--surface) !important;
+  border-bottom: 1px solid var(--gray-200) !important;
+}
+
+.modal-body,
+.admin-modal-form {
+  background: var(--surface) !important;
+  color: var(--gray-800) !important;
+}
+
+.modal-body h2,
+.modal-body h3,
+.admin-modal-header h3 {
+  color: var(--gray-900) !important;
+}
+
+.close-btn,
+.modal-close,
+.admin-modal-close {
+  background: var(--gray-100) !important;
+  color: var(--gray-700) !important;
+  border: 1px solid var(--gray-200) !important;
+}
+
+.close-btn:hover,
+.modal-close:hover,
+.admin-modal-close:hover {
+  background: var(--gray-200) !important;
+}
+
+.btn-primary,
+.btn-submit {
+  border-radius: 10px !important;
+}
+
+.btn-secondary,
+.btn-cancel {
+  border-radius: 10px !important;
+}
+
+/* ===============================================================
+   Admin editing modals — shared layout for every content form
+   ---------------------------------------------------------------
+   The form body scrolls while the title bar and the Save/Cancel row
+   stay pinned, so the actions are always reachable on long forms.
+   =============================================================== */
+.admin-modal,
+.modal-content.admin-form-modal {
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.admin-modal-header,
+.admin-form-modal .modal-header {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.admin-modal-form,
+.admin-form-modal .modal-form {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.5rem !important;
+}
+
+/* Pinned action row */
+.admin-modal-form .form-actions,
+.admin-form-modal .modal-form .modal-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin: 1.5rem -1.5rem -1.5rem;
+  padding: 1rem 1.5rem;
+  background: #ffffff;
+  border-top: 1px solid var(--gray-200);
+  box-shadow: 0 -8px 20px -12px rgba(15, 23, 42, 0.25);
+}
+
+.admin-modal-form .btn-delete-item {
+  margin-right: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.7rem 1.1rem;
+  border: 1px solid var(--danger-border);
+  border-radius: 10px;
+  background: var(--danger-soft);
+  color: var(--danger-strong-alt);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.admin-modal-form .btn-delete-item:hover {
+  background: var(--danger-border);
+}
+
+/* Grouped field sections */
+.form-section {
+  padding: 1.15rem 1.25rem;
+  margin-bottom: 1.15rem;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+}
+
+.form-section-title {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--gray-500);
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.form-section .form-group:last-child {
+  margin-bottom: 0;
+}
+
+/* Fields side by side, stacking on narrow screens */
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.admin-modal-form label,
+.modal-form .form-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: 0.4rem;
+}
+
+.admin-modal-form label.is-required::after {
+  content: ' *';
+  color: var(--danger-strong-alt);
+}
+
+.form-hint {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--gray-500);
+}
+
+/* File inputs styled as a drop-zone-ish button */
+.admin-modal-form input[type="file"],
+.modal-form input[type="file"] {
+  width: 100%;
+  padding: 0.8rem !important;
+  border: 1px dashed var(--gray-300) !important;
+  border-radius: 10px !important;
+  background: var(--surface) !important;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.admin-modal-form input[type="file"]:hover,
+.modal-form input[type="file"]:hover {
+  border-color: var(--primary-500) !important;
+  background: var(--gray-50) !important;
+}
+
+.admin-modal-form input[type="file"]::file-selector-button,
+.modal-form input[type="file"]::file-selector-button {
+  margin-right: 0.85rem;
+  padding: 0.45rem 0.85rem;
+  border: none;
+  border-radius: 7px;
+  background: var(--primary-500);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+/* Chip showing a chosen / existing file */
+.selected-file-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.selected-file-row span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remove-file-btn,
+.clear-template-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  padding: 0.35rem 0.6rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--danger-soft);
+  color: var(--danger-strong);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.remove-file-btn:hover,
+.clear-template-btn:hover {
+  background: var(--danger-border);
+}
+
+.admin-modal-form .btn-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------
+   Roomier modals across every page (read views and admin forms)
+   --------------------------------------------------------------- */
+.modal-content {
+  max-width: 940px !important;
+  max-height: 92vh !important;
+}
+
+.admin-modal {
+  max-width: 880px !important;
+  max-height: 94vh !important;
+}
+
+.modal-body {
+  padding: 2.25rem 2.5rem 2.5rem !important;
+}
+
+/* Base modal layout so any page can render a read modal without its own CSS.
+   Page-scoped rules (e.g. .resolutions-page .modal-content) still win. */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.modal-content {
+  position: relative;
+  width: 100%;
+  border-radius: 16px;
+  overflow-y: auto;
+}
+
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.modal-category-tag {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent-text-strong);
+  background: var(--info-soft-alt);
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+}
+
+.announcement-read-more {
+  margin-top: 0.65rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent-text);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.announcement-read-more:hover {
+  text-decoration: underline;
+}
+
+/* Saved-image manager used inside admin forms */
+.existing-images-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+
+.existing-image {
+  position: relative;
+  width: 74px;
+  height: 56px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--gray-200);
+}
+
+.existing-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.existing-image button {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(17, 24, 39, 0.72);
+  color: #fff;
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.existing-image button:hover {
+  background: var(--danger-strong-alt);
+}
+
+/* ---------------------------------------------------------------
+   Blog-style reading layout used inside the detail modals
+   --------------------------------------------------------------- */
+.blog-modal .modal-body {
+  padding: 2.5rem 3rem 3rem !important;
+}
+
+.blog-article-header {
+  margin-bottom: 1.75rem;
+}
+
+.blog-article-title {
+  font-size: 2rem !important;
+  line-height: 1.25 !important;
+  font-weight: 800 !important;
+  color: var(--gray-900) !important;
+  letter-spacing: -0.02em;
+  margin: 0.75rem 0 1rem !important;
+  padding-right: 2.5rem;
+}
+
+.blog-article-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--gray-200);
+  font-size: 0.9rem;
+  color: var(--gray-500);
+}
+
+.blog-article-meta .blog-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.blog-article-meta svg {
+  color: var(--gray-400);
+}
+
+.blog-article-body {
+  padding-top: 1.75rem;
+}
+
+.blog-section {
+  margin-top: 2rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--gray-200);
+}
+
+.blog-section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gray-500);
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+  .modal-body,
+  .blog-modal .modal-body {
+    padding: 1.75rem 1.25rem 2rem !important;
+  }
+
+  .blog-article-title {
+    font-size: 1.5rem !important;
+  }
+}
+
+.upload-status-text {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--gray-700);
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+}
+
+.upload-status-text.uploading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.upload-status-text.uploading::before {
+  content: '';
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  border: 2px solid var(--gray-300);
+  border-top-color: var(--accent-text);
+  animation: spin-status 0.8s linear infinite;
+}
+
+/* Global visual consistency pass */
+.memorandum-page .memo-item,
+.resolutions-page .resolution-card,
+.mom-page .mom-card,
+.accomplishment-page .accomplishment-card,
+.request-page .request-type-card {
+  border: 1px solid var(--gray-200) !important;
+  border-radius: var(--ui-card-radius) !important;
+}
+
+.admin-add-btn,
+.download-btn,
+.see-more-btn,
+.btn-submit,
+.btn-cancel,
+.btn-primary,
+.btn-secondary,
+.btn-outline {
+  min-height: var(--ui-control-height);
+  border-radius: var(--ui-control-radius) !important;
+  font-weight: 600;
+}
+
+.admin-add-btn {
+  padding: 0.65rem 1.2rem !important;
+}
+
+.page-header {
+  margin-bottom: 2.5rem;
+}
+
+@keyframes spin-status {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Table Styles */
+.table-container {
+  overflow-x: auto;
+  background: var(--bg-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 1rem 1.25rem;
+  text-align: left;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.table th {
+  background: var(--gray-50);
+  font-weight: 600;
+  color: var(--gray-700);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.table tr:hover td {
+  background: var(--gray-50);
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--gray-100);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gray-400);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-500);
+}
+
+/* Animation Classes */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from { 
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+.slide-up {
+  animation: slideUp 0.5s ease forwards;
+}
+
+.slide-in {
+  animation: slideIn 0.5s ease forwards;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  :root {
+    --navbar-height: 60px;
+    --ui-control-height: 40px;
+  }
+  
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.75rem; }
+  
+  .section {
+    padding: 2.5rem 0;
+  }
+  
+  .page-header {
+    padding: 2.5rem 0;
+    margin-bottom: 1.75rem;
+  }
+  
+  .page-header h1 {
+    font-size: 1.85rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .page-header p {
+    font-size: 0.98rem;
+    max-width: 100%;
+    padding: 0 0.75rem;
+  }
+  
+  .section-title {
+    font-size: 1.75rem;
+  }
+
+  .container {
+    padding: 0 1rem;
+  }
+
+  .memorandum-page .memo-item,
+  .resolutions-page .resolution-card,
+  .mom-page .mom-card,
+  .accomplishment-page .accomplishment-card,
+  .request-page .request-type-card {
+    padding: 1.1rem;
+  }
+
+  .admin-add-btn,
+  .download-btn,
+  .see-more-btn,
+  .btn-submit,
+  .btn-cancel,
+  .btn-primary,
+  .btn-secondary,
+  .btn-outline {
+    width: 100%;
+    min-height: var(--ui-control-height);
+  }
+
+  .type-actions .btn,
+  .vote-actions .btn {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .admin-actions,
+  .form-actions,
+  .type-actions,
+  .vote-actions {
+    gap: 0.6rem;
+  }
+
+  /* Final mobile modal internal polish */
+  .modal-content,
+  .admin-modal {
+    width: min(100%, 96vw) !important;
+    max-height: 92vh !important;
+    border-radius: 14px !important;
+  }
+
+  .modal-header,
+  .admin-modal-header {
+    padding: 0.95rem 1rem !important;
+  }
+
+  .modal-header h2,
+  .modal-header h3,
+  .admin-modal-header h3 {
+    font-size: 1.05rem !important;
+    line-height: 1.35;
+    margin: 0;
+    padding-right: 0.4rem;
+  }
+
+  .close-btn,
+  .modal-close,
+  .admin-modal-close {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px;
+    min-height: 42px;
+    border-radius: 999px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+  }
+
+  .modal-body,
+  .admin-modal-form {
+    padding: 0.95rem 1rem 1rem !important;
+  }
+
+  .admin-modal-form .form-group {
+    margin-bottom: 0.95rem !important;
+  }
+
+  .admin-modal-form .form-group label {
+    margin-bottom: 0.4rem;
+    font-size: 0.9rem;
+    line-height: 1.35;
+  }
+
+  .admin-modal-form .form-group input,
+  .admin-modal-form .form-group textarea,
+  .admin-modal-form .form-group select {
+    min-height: 40px;
+    padding-top: 0.62rem;
+    padding-bottom: 0.62rem;
+    font-size: 0.95rem;
+  }
+
+  .admin-modal-form .form-group textarea {
+    min-height: 96px;
+  }
+}
+
+/* ========================================================================
+   DARK MODE
+
+   Set by ThemeContext as data-theme="dark" on <html>, and by the inline script
+   in public/index.html before the first paint so there is no white flash.
+
+   Almost all of this is achieved by redefining tokens rather than by writing
+   dark rules per component: the neutral ramp inverts, the soft/strong accent
+   pairs become deep tints, and every card that paints itself with var(--surface)
+   follows automatically. The handful of explicit rules at the end are for places
+   where a colour is genuinely fixed rather than semantic.
+
+   Toggle: tap the heart in the footer.
+======================================================================== */
+/* Held for one frame while ThemeContext swaps the palette. See the comment
+   there: this is what stops a transitioned, var-driven background from getting
+   stuck on its old value, and it keeps the swap instant instead of a mushy
+   hundred-element cross-fade. */
+.theme-switching,
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  transition: none !important;
+  animation-duration: 0s !important;
+}
+
+:root[data-theme='dark'] {
+  /* Native form controls, scrollbars and the date picker follow this. */
+  color-scheme: dark;
+
+  /* Neutral ramp, inverted. --gray-50 stays the "one step off the surface"
+     panel colour, so components using it keep reading correctly. */
+  --gray-50: #1a2233;
+  --gray-100: #202a3d;
+  --gray-200: #2c3850;
+  --gray-300: #3d4a68;
+  --gray-400: #7987a5;
+  --gray-500: #98a4be;
+  --gray-600: #b4bed3;
+  --gray-700: #cfd6e4;
+  --gray-800: #e4e9f2;
+  --gray-900: #f3f6fb;
+
+  /* Blue tints are used as soft backgrounds and hover states, so they have to
+     go dark rather than staying pale. The mid and dark steps keep their hue so
+     buttons and gradients look the same. */
+  --primary-50: #14243a;
+  --primary-100: #1a2f4c;
+  --primary-200: #234065;
+  --primary-300: #3d7fc0;
+
+  /* Same for the gold tints. */
+  --secondary-50: #241f10;
+  --secondary-100: #2e2714;
+  --secondary-200: #40361a;
+
+  /* Accent text lightens; the button and header backgrounds above do not. */
+  --accent-text: #6fb6f7;
+  --accent-text-strong: #9acdfa;
+  --accent-text-deep: #c3e0fd;
+
+  --bg-primary: #131c2e;
+  --bg-secondary: #0b1220;
+
+  --surface: #131c2e;
+  --surface-raised: #1a2436;
+  --surface-inset: #0e1628;
+  --border-color: #2c3850;
+
+  --footer-bg: #070d18;
+  --navbar-bg: rgba(11, 18, 32, 0.92);
+  --navbar-bg-scrolled: rgba(11, 18, 32, 0.97);
+  --sync-panel-bg: linear-gradient(135deg, #141f36 0%, #16203a 100%);
+  --sync-panel-border: #2a3b5c;
+
+  /* Callouts: deep tint behind, light text on top. */
+  --info-soft: #16273f;
+  --info-soft-alt: #1c3352;
+  --info-border: #2d4468;
+  --info-strong: #a8c8f0;
+  --info-strong-alt: #7fb2ec;
+
+  --success-soft: #122b23;
+  --success-soft-alt: #16382c;
+  --success-border: #24543f;
+  --success-strong: #86e0b8;
+  --success-strong-alt: #5fd39c;
+
+  --warn-soft: #2e2410;
+  --warn-border: #52401a;
+  --warn-strong: #f0cf8a;
+  --warn-strong-alt: #e8bc63;
+
+  --danger-soft: #331919;
+  --danger-border: #5a2a2a;
+  --danger-strong: #f2a8a8;
+  --danger-strong-alt: #ef8686;
+
+  /* Shadows need real black to register against a dark surface. */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.45), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.35);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.55), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+}
+
+/* Headings are navy in light mode, which is invisible on a dark surface. The
+   more specific rules that paint a heading white on a coloured header (like
+   .page-header h1) still win over this. */
+:root[data-theme='dark'] h1,
+:root[data-theme='dark'] h2,
+:root[data-theme='dark'] h3,
+:root[data-theme='dark'] h4,
+:root[data-theme='dark'] h5,
+:root[data-theme='dark'] h6 {
+  color: var(--gray-900);
+}
+
+/* Form controls inherit the surface, but browsers give them a white default. */
+:root[data-theme='dark'] input,
+:root[data-theme='dark'] select,
+:root[data-theme='dark'] textarea {
+  background-color: var(--surface-inset);
+  color: var(--gray-800);
+  border-color: var(--border-color);
+}
+
+:root[data-theme='dark'] input::placeholder,
+:root[data-theme='dark'] textarea::placeholder {
+  color: var(--gray-400);
+}
+
+/* The rich text editor and document viewer render author-supplied content, so
+   they get an explicit surface rather than inheriting an unknown one. */
+:root[data-theme='dark'] .rte-surface,
+:root[data-theme='dark'] .rich-content {
+  color: var(--gray-800);
+}
+
+/* An embedded PDF or Office preview is a white page; a light frame around it
+   reads better than a dark one butting straight against it. */
+:root[data-theme='dark'] .doc-viewer-frame {
+  background: var(--gray-100);
+}
+
+/* Photos on a dark page benefit from a touch less glare. */
+:root[data-theme='dark'] .officer-image img,
+:root[data-theme='dark'] .carousel-image {
+  filter: brightness(0.94);
+}
+
+/* Each section has a pastel intro banner in its own hue — purple for minutes,
+   teal for narrative reports, pink for request letters. They are built from
+   literal gradients rather than tokens, so dark mode has to restate them.
+   (The memorandum banner already uses --secondary-*, so it flips by itself.) */
+:root[data-theme='dark'] .mom-info {
+  background: linear-gradient(135deg, #241c3d 0%, #2b2150 100%);
+  border-color: #3d2f6b;
+}
+
+:root[data-theme='dark'] .mom-info h3 { color: #cbb8f7; }
+:root[data-theme='dark'] .mom-info p { color: #b49ded; }
+:root[data-theme='dark'] .mom-info .info-icon { color: #b49ded; }
+
+:root[data-theme='dark'] .narrative-info {
+  background: linear-gradient(135deg, #0e2b2a 0%, #113a37 100%);
+  border-color: #1d554f;
+}
+
+:root[data-theme='dark'] .narrative-info h3 { color: #8fe3d8; }
+:root[data-theme='dark'] .narrative-info p { color: #6fd6c8; }
+:root[data-theme='dark'] .narrative-info .info-icon { color: #6fd6c8; }
+
+:root[data-theme='dark'] .request-info {
+  background: linear-gradient(135deg, #34162a 0%, #431b34 100%);
+  border-color: #63264b;
+}
+
+:root[data-theme='dark'] .request-info h3 { color: #f4a8ce; }
+:root[data-theme='dark'] .request-info p { color: #ee92c0; }
+:root[data-theme='dark'] .request-info .info-icon { color: #ee92c0; }

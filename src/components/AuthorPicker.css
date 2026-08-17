@@ -1,0 +1,127 @@
+.author-picker {
+  border: 1px solid var(--gray-200, #e5e7eb);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.author-picker-modes {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.4rem;
+  background: var(--gray-50, #f9fafb);
+  border-bottom: 1px solid var(--gray-200, #e5e7eb);
+}
+
+.author-mode-btn {
+  flex: 1;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--gray-600, #4b5563);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.author-mode-btn:hover {
+  background: var(--surface);
+  border-color: var(--gray-200, #e5e7eb);
+}
+
+.author-mode-btn.active {
+  background: var(--primary-500, #068df8);
+  border-color: var(--primary-500, #068df8);
+  color: #fff;
+}
+
+.author-picker-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.9rem;
+}
+
+.author-picker-body small {
+  color: var(--gray-500, #6b7280);
+  font-size: 0.8rem;
+}
+
+.author-file-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--gray-600, #4b5563);
+  margin-bottom: -0.3rem;
+}
+
+.author-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.8rem;
+  background: var(--gray-50, #f9fafb);
+  border: 1px solid var(--gray-200, #e5e7eb);
+  border-radius: 8px;
+}
+
+.author-preview-avatar {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  color: #4f46e5;
+  font-size: 1.15rem;
+}
+
+.author-preview-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.author-preview div:last-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.author-preview strong {
+  color: var(--gray-900, #111827);
+  font-size: 0.92rem;
+}
+
+.author-preview span {
+  color: var(--gray-500, #6b7280);
+  font-size: 0.82rem;
+}
+
+.author-selected-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.7rem;
+  background: var(--gray-50, #f9fafb);
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.author-selected-file button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.55rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--danger-soft);
+  color: var(--danger-strong);
+  font-size: 0.8rem;
+  cursor: pointer;
+}

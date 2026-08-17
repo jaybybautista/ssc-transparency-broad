@@ -1,0 +1,193 @@
+# Email alerts, calendar sync, and dark mode
+
+Three features live here:
+
+1. **Email alerts** — students subscribe to be emailed about urgent
+   announcements and memoranda.
+2. **Calendar sync** — students put the calendar of activities into Google
+   Calendar, Apple Calendar or Outlook, with reminders.
+3. **Dark mode** — toggled by tapping the ❤️ in the footer.
+
+The first two are built to run on a static site with no server of its own, which
+shapes what each can honestly promise. That is spelled out below so you can
+decide whether to upgrade later.
+
+---
+
+## 1. Deploy the rules — REQUIRED before email subscriptions work
+
+Email alerts write to a new `subscribers` collection. Until the rules are
+deployed, students see *"The server refused the subscription"* and nothing is
+saved.
+
+```bash
+npx firebase-tools deploy --only firestore:rules
+```
+
+Or paste `firestore.rules` into **Firebase Console → Firestore Database → Rules
+→ Publish**.
+
+Calendar sync and dark mode need **no deployment** — they run entirely in the
+student's browser.
+
+---
+
+## 2. Email alerts
+
+**Students:** the **Notify me** button on Announcements and Memorandum Orders.
+They pick topics (urgent announcements, all announcements, memoranda, new
+activities, resolutions open for voting), give an address and optionally a name
+and program. No sign-in required — a student should not need an account to be
+told about a class suspension. The same panel is the unsubscribe screen.
+
+**Officers:** **Admin → Alert Subscribers.** Requires a verified Google account
+in the `admins` collection, the same gate as the ticket inbox, because the roster
+is a list of student email addresses.
+
+That page:
+
+- counts subscribers per topic, and filters the table by topic
+- picks a published announcement or memorandum and works out who asked about it
+- opens your own mail app with the subject, body, board link and unsubscribe
+  footer filled in, and the recipients in **BCC** so students never see each
+  other's addresses
+- splits into batches of 40, because mail clients choke on longer `mailto:` links
+- copies a batch of addresses to the clipboard as a fallback
+- exports the roster to CSV
+
+**The limitation:** an officer presses send. The site cannot mail anything by
+itself, so email is "same day", not "the same second". The student-facing copy
+says so rather than promising real-time delivery.
+
+### Upgrading to automatic email
+
+Two routes, in order of effort:
+
+1. **EmailJS or a similar browser-callable service** — no backend, free tier of a
+   few hundred sends a month. Fastest path, but the send happens from the
+   student's browser, so it only fires while an officer has the dashboard open.
+2. **A Cloud Function on the Blaze plan** — the real answer. An
+   `onDocumentCreated` trigger on `announcements`/`memorandums` reads
+   `subscribers`, filters by topic, and sends through SendGrid, Mailgun or the
+   Gmail API. This is also what would let you add true web push for closed
+   browsers. Blaze is pay-as-you-go with a free monthly allowance; a campus board
+   at this volume would cost approximately nothing, but it does require a card on
+   file.
+
+Nothing needs restructuring for either — `subscribers` documents already carry
+the topic flags a sender would filter on.
+
+---
+
+## 3. Calendar sync
+
+**Per activity:** open an activity on the Calendar of Activities and use
+**Add to my calendar**. Google Calendar and Outlook open pre-filled; Apple
+Calendar and everything else get an `.ics` file. The reminder dropdown is written
+into the `.ics` as a `VALARM` — Google's and Outlook's compose links accept no
+reminder parameter, which the menu says rather than silently dropping it.
+
+**Everything at once:** the **Sync to your own calendar** button below the
+calendar. It stays collapsed until tapped, then offers scope (upcoming or all),
+a reminder, a one-click download of a single `.ics` holding every selected
+activity, and per-app import instructions.
+
+Details that matter:
+
+- **Times are exact.** Activities are stored as a date plus free-text time
+  ("9:00 AM - 5:00 PM"). `parseEventTime` handles 12- and 24-hour clocks, en/em
+  dashes, "to", and a lone time (which gets an hour's duration). No time at all
+  becomes an all-day entry. Philippine time has no daylight saving, so a fixed
+  +08:00 offset converted to UTC is exact rather than approximate — and it lands
+  on the right hour for a student whose phone is set to another timezone.
+- **Re-importing does not duplicate.** Every event carries a stable UID
+  (`ssc-<id>@psu-ucc-ssc`), so a second import updates the existing entry.
+  Download again whenever the calendar changes.
+- **Pending activities import as tentative**, approved ones as confirmed, so a
+  provisional event looks provisional in the student's own calendar.
+
+**The limitation:** this is a snapshot, not a live subscription feed. A
+subscribe-by-URL feed (`webcal://`) has to be generated by a server on request,
+so it needs the same Cloud Function as automatic email. The panel says so, and
+makes re-downloading one click.
+
+---
+
+## 4. Dark mode
+
+**Toggle:** tap the ❤️ in *"A.Y. 2025-2026 | Developed with ❤️ for Student
+Welfare"* in the footer. There is no other switch — it is an easter egg. The
+heart pulses slowly while dark mode is on so it reads as a control rather than
+decoration, and it carries a proper `aria-label` and tooltip.
+
+**How it works:** `ThemeContext` writes `data-theme="dark"` on `<html>` and
+remembers the choice in `localStorage`. An inline script in `public/index.html`
+applies the saved value *before the first paint*, so a returning visitor never
+sees a white flash. A visitor with no saved choice gets whatever their device is
+set to (`prefers-color-scheme`).
+
+**How the styling works — worth understanding before you edit any CSS.** Almost
+all of dark mode is one block of redefined custom properties at the bottom of
+`src/styles/global.css`, not per-component dark rules. For that to work, every
+colour in the app had to become a token:
+
+| Token family | Meaning | Under dark mode |
+|---|---|---|
+| `--surface`, `--surface-raised`, `--surface-inset` | cards, modals, wells | dark navy |
+| `--gray-50` … `--gray-900` | the neutral ramp | **inverted** |
+| `--primary-50` … `--primary-200` | pale blue backgrounds and hovers | dark blue tints |
+| `--accent-text`, `--accent-text-strong`, `--accent-text-deep` | blue used as **text** | light blue |
+| `--info-*`, `--success-*`, `--warn-*`, `--danger-*` | callout `soft` background + `strong` text pairs | deep tint + light text |
+| `--footer-bg`, `--navbar-bg` | surfaces that stay dark in **both** themes | unchanged in spirit |
+
+Every token's light value is exactly the colour it replaced, so **light mode is
+unchanged**.
+
+Two traps this design exists to avoid, both of which will bite you if you add CSS
+without using the tokens:
+
+- **Never build a permanently-dark surface from `--gray-800/900`.** The ramp
+  inverts, so the footer would turn white. That is why `--footer-bg` exists.
+- **Never use `--primary-600/700` for text.** Those same tokens paint buttons and
+  headers that carry white text, so they must not lighten. Accent text has its
+  own `--accent-text*` family for exactly this reason.
+
+The handful of genuinely fixed colours get explicit `:root[data-theme='dark']`
+rules at the end of `global.css` — the per-section pastel intro banners (purple
+for minutes, teal for narrative reports, pink for request letters), the officer
+placeholder avatar, form controls, and a light frame around embedded PDF previews
+so a white document does not butt straight against a dark page.
+
+**Verified:** an automated contrast and brightness sweep over all 13 public pages
+and 8 admin sections, in both themes, reports no text below a 3:1 ratio and no
+stray bright surfaces in dark mode.
+
+---
+
+## Files
+
+| File | Role |
+|---|---|
+| `src/lib/notifications.js` | Alert topics and the locally cached preferences |
+| `src/components/AlertSubscribe.js` | The student-facing panel and its `Notify me` trigger |
+| `src/pages/Admin/AlertSubscribers.js` | Roster, topic counts, BCC send, CSV export |
+| `src/lib/calendarLinks.js` | Time parsing, Google/Outlook links, `.ics` writer |
+| `src/lib/calendarLinks.test.js` | 23 tests over the above |
+| `src/components/AddToCalendar.js` | Per-activity dropdown |
+| `src/components/CalendarSyncPanel.js` | Collapsible bulk export panel and import instructions |
+| `src/context/ThemeContext.js` | Theme state, persistence, `data-theme` attribute |
+| `src/styles/global.css` | Token definitions and the dark palette |
+
+---
+
+## Troubleshooting
+
+**`[eslint] UNKNOWN: unknown error, open '…\node_modules\.cache\.eslintcache'`**
+
+The lint cache file got corrupted, usually because the dev server and a file
+sync or antivirus tool wrote to it at once. Harmless. Stop the dev server, delete
+the file, and start again:
+
+```bash
+rm -f node_modules/.cache/.eslintcache
+```
