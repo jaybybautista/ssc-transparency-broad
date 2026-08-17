@@ -1,4 +1,4 @@
-# Email alerts, calendar sync, and dark mode
+# Email alerts, calendar sync, dark mode, and the rest
 
 Three features live here:
 
@@ -191,3 +191,109 @@ the file, and start again:
 ```bash
 rm -f node_modules/.cache/.eslintcache
 ```
+
+
+---
+
+## 5. Academic-year archiving
+
+**Toggle:** the year switcher in the navbar (hidden until there is more than one
+year of content). **Admin → Academic Year** declares which year the board opens
+on for everyone.
+
+**The switch is manual on purpose.** Deriving the current year from the calendar
+means the board empties itself on the morning the new academic year begins —
+before the incoming council has posted anything, and possibly before the
+outgoing one has handed over. Councils change on their own schedule, so the
+setting lives in `settings/board` and only an admin moves it.
+
+**No migration was needed.** Dated content belongs to a year by its own `date`,
+filtered *server-side* with a range query on the field it is already ordered by
+— so no new field on a single existing document, and no composite index.
+Officers are the exception: they have no date, so they carry `academicYear`
+explicitly, and records written before the field existed read as the current
+year. The constitution and request-letter templates are standing documents and
+are not year-scoped at all.
+
+## 6. Drafts and scheduled announcements
+
+**Admin → Drafts & Scheduled.** Drafts live in `announcementDrafts`, a separate
+admin-only collection rather than a flag on a public document — a flag can be
+read straight off the API however the UI hides it. Publishing moves the document
+into `announcements`.
+
+**Scheduling caveat, stated in the UI too:** nothing can run at 08:00 on Monday
+by itself. A scheduled post publishes the next time an officer opens that page
+after its time — same day in practice, not to the minute. For a true embargo,
+leave it a draft and publish by hand.
+
+## 7. Activity log
+
+**Admin → Activity Log.** Who created, edited, deleted or published what.
+Append-only: the rules deny update and delete to everyone, admins included,
+because a log an admin can edit is not evidence of anything. The recorded uid is
+pinned to the caller's own, so nobody can write an entry in a colleague's name.
+
+What a client can still do is skip logging altogether, so this is an
+accountability aid among officers rather than a forensic trail. Only a Cloud
+Function triggered by the write itself would be that.
+
+## 8. View counts
+
+Real, shared counts in a `views` collection — one document per item holding a
+single number. Their own collection because content documents are admin-only
+writable and must stay that way.
+
+The write is open but tightly shaped: three fields only, and the count may move
+up by exactly one. The worst a script can do is inflate a number, which is what
+reloading a page would do anyway. A localStorage marker stops the same browser
+counting twice, so treat these as *reads*, not unique people.
+
+While fixing this it turned out the **home page had never shown real content** —
+it imported `sampleData` directly, so it displayed invented announcements no
+matter what the council published. It now reads the database.
+
+## 9. Global search
+
+Navbar button, or <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>K</kbd>, or <kbd>/</kbd>.
+Arrow keys move, Enter opens, Escape closes.
+
+Searches what the app has already loaded, because Firestore has no full-text
+search — matching a word inside a paragraph needs an external index like
+Algolia. When there is more behind the current page the empty state says so and
+points at "Load older" and the year switcher, rather than implying the content
+does not exist.
+
+## 10. Installable (PWA)
+
+A manifest, generated icons, and a service worker in `public/sw.js`.
+
+The failure everyone hits with service workers is serving a stale build forever.
+Three things prevent it: navigations are network-first, so a deploy is picked up
+as soon as the network is reachable; static assets are cache-first only because
+CRA fingerprints their filenames; and a new version never activates silently —
+it waits, and the page offers a reload. Live data, auth and uploads are never
+cached.
+
+## 11. Accessibility
+
+- **Focus trapping** in every modal, via `useModalBehaviour`. Focus moves in on
+  open, Tab wraps at both ends instead of walking into the page behind, and
+  returns to whatever opened the dialog on close.
+- **The carousel is operable by keyboard**: the slide is a real button rather
+  than a clickable `<img>`, arrow keys move it, and the lightbox traps focus.
+- **Skip link** to jump past the navigation.
+- **Visible focus rings** via `:focus-visible`, so they appear for keyboard use
+  without ringing every button a mouse touches.
+- **`prefers-reduced-motion`** is honoured.
+
+## 12. Filipino / English
+
+Toggle in the navbar; detected from the browser on a first visit and remembered
+per device. `<html lang>` follows, so screen readers pronounce correctly.
+
+**Scope:** the interface only. Council-authored posts stay in whatever language
+they were written in — machine-translating an official notice would misrepresent
+what the SSC actually said. If something needs to appear in both, write it in
+both. Strings live in `src/lib/translations.js`; a missing translation falls back
+to English rather than showing a blank or a raw key.

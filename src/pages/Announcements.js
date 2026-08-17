@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext , useRef } from 'react';
 import { FiFilter, FiBell, FiAward, FiCreditCard, FiAlertCircle, FiInfo, FiSearch, FiEdit2, FiTrash2, FiPlus, FiX, FiCalendar } from 'react-icons/fi';
 import { AuthContext } from '../App';
 import { useData } from '../context/DataContext';
@@ -153,7 +153,9 @@ const Announcements = () => {
   const pinnedAnnouncements = filteredAnnouncements.filter(a => a.isPinned);
   const regularAnnouncements = filteredAnnouncements.filter(a => !a.isPinned);
 
-  useModalBehaviour(showModal, () => setShowModal(false));
+  // Handed to useModalBehaviour so Tab stays inside the dialog.
+  const adminModalRef = useRef(null);
+  useModalBehaviour(showModal, () => setShowModal(false), adminModalRef);
 
   return (
     <div className="announcements-page">
@@ -375,7 +377,7 @@ const Announcements = () => {
       {/* Admin Modal */}
       {showModal && (
         <div className="admin-modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="admin-modal" ref={adminModalRef} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-header">
               <h3>{editItem ? 'Edit Announcement' : 'Add New Announcement'}</h3>
               <button className="admin-modal-close" onClick={() => setShowModal(false)}>

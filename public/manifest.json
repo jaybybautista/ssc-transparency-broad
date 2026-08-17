@@ -1,0 +1,56 @@
+{
+  "name": "PSU-UCC Supreme Student Council Virtual Board",
+  "short_name": "SSC Board",
+  "description": "Announcements, memorandum orders, resolutions and the calendar of activities for the PSU Urdaneta City Campus Supreme Student Council.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#020C30",
+  "categories": ["education", "news"],
+  "lang": "en-PH",
+  "icons": [
+    {
+      "src": "/ssc_logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Announcements",
+      "url": "/announcements",
+      "description": "Latest news and advisories"
+    },
+    {
+      "name": "Calendar of Activities",
+      "url": "/calendar",
+      "description": "What is happening and when"
+    },
+    {
+      "name": "Connect with SSC",
+      "url": "/ssc/contact",
+      "description": "Submit a request or a suggestion"
+    }
+  ]
+}

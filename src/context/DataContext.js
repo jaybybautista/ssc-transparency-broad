@@ -1,14 +1,16 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   addDoc,
   collection,
   deleteDoc,
   doc,
   getDoc,
+  getDocs,
   limit,
   onSnapshot,
   orderBy,
   query,
+  where,
   serverTimestamp,
   setDoc,
   updateDoc
@@ -27,6 +29,14 @@ import {
 import { db, isFirebaseEnabled } from '../lib/firebase';
 import { ALERT_TOPICS } from '../lib/notifications';
 import { deleteRecordFiles } from '../lib/uploads';
+import { recordAudit } from '../lib/auditLog';
+import { registerView, subscribeToViewCounts, viewDocId } from '../lib/viewCounts';
+import {
+  academicYearBounds,
+  academicYearOf,
+  academicYearRange,
+  currentAcademicYear
+} from '../lib/academicYear';
 import { useVoterAuth } from './VoterAuthContext';
 
 const DataContext = createContext(null);
@@ -94,6 +104,10 @@ const normalizeResolution = (item) => ({
 });
 
 const normalizeOfficer = (item) => ({
+  // Officers are the one content type with no date, so the academic year has to
+  // be stored. Records written before this existed have no field and are read as
+  // belonging to the current year — which is where they were in fact serving.
+  academicYear: item.academicYear || currentAcademicYear(),
   name: item.name || '',
   position: item.position || '',
   division: item.division || 'Core Officers',
@@ -165,6 +179,31 @@ const normalizeNarrativeReport = (item) => ({
   fileName: item.fileName || '',
   fileUrl: item.fileUrl || '',
   ...normalizeAuthor(item)
+});
+
+/**
+ * Unpublished announcements — drafts and scheduled posts.
+ *
+ * They live in their OWN collection rather than as a flag on `announcements`,
+ * which matters for three reasons:
+ *
+ *  1. Privacy is real. A collection admins alone may read cannot leak; a flag
+ *     on a world-readable document can be read straight off the API however the
+ *     UI chooses to hide it.
+ *  2. No migration. A `where('isDraft','==',false)` filter would silently omit
+ *     every announcement written before the field existed — the same trap as
+ *     ordering by a field some documents lack.
+ *  3. No composite index, and no clash with the academic-year range filter,
+ *     which already uses this query's one permitted range field.
+ *
+ * Publishing moves the document across. See publishScheduledDrafts for the one
+ * honest limitation of scheduling without a server.
+ */
+const normalizeDraft = (item) => ({
+  ...normalizeAnnouncement(item),
+  // ISO datetime, or '' for a plain draft with no scheduled time.
+  publishAt: item.publishAt || '',
+  savedBy: item.savedBy || ''
 });
 
 export const TICKET_TYPES = [
@@ -284,23 +323,24 @@ export const PAGE_SIZE = 60;
  *     upcoming activities, then flipped to chronological for the calendar.
  */
 const PUBLIC_COLLECTIONS = [
-  { key: 'announcements', orderField: 'date', direction: 'desc', label: 'announcements' },
+  { key: 'announcements', orderField: 'date', direction: 'desc', label: 'announcements', yearScoped: true },
   {
     key: 'events',
     orderField: 'date',
     direction: 'desc',
     label: 'calendar events',
+    yearScoped: true,
     // Fetch latest-dated first (so upcoming activities survive the limit),
     // display oldest-first (so the calendar reads chronologically).
     sort: (a, b) => new Date(a.date) - new Date(b.date)
   },
-  { key: 'resolutions', orderField: 'date', direction: 'desc', label: 'resolutions' },
+  { key: 'resolutions', orderField: 'date', direction: 'desc', label: 'resolutions', yearScoped: true },
   { key: 'officers', label: 'officers' },
-  { key: 'meetings', orderField: 'date', direction: 'desc', label: 'meeting records' },
-  { key: 'accomplishments', orderField: 'date', direction: 'desc', label: 'accomplishments' },
+  { key: 'meetings', orderField: 'date', direction: 'desc', label: 'meeting records', yearScoped: true },
+  { key: 'accomplishments', orderField: 'date', direction: 'desc', label: 'accomplishments', yearScoped: true },
   { key: 'requestTypes', label: 'request letter types' },
-  { key: 'memorandums', orderField: 'date', direction: 'desc', label: 'memorandums' },
-  { key: 'narrativeReports', orderField: 'date', direction: 'desc', label: 'narrative reports' },
+  { key: 'memorandums', orderField: 'date', direction: 'desc', label: 'memorandums', yearScoped: true },
+  { key: 'narrativeReports', orderField: 'date', direction: 'desc', label: 'narrative reports', yearScoped: true },
   { key: 'constitution', orderField: 'effectiveDate', direction: 'desc', label: 'constitution documents' }
 ];
 
@@ -331,6 +371,7 @@ const removeDocAndFiles = async (collectionName, id) => {
   }
 
   await deleteDoc(reference);
+  recordAudit('delete', collectionName, id, record);
 
   if (record) {
     deleteRecordFiles(record).catch(() => {
@@ -364,6 +405,9 @@ export const DataProvider = ({ children }) => {
   const [tickets, setTickets] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [subscribers, setSubscribers] = useState([]);
+  const [drafts, setDrafts] = useState([]);
+  const [auditLog, setAuditLog] = useState([]);
+  const [viewCounts, setViewCounts] = useState({});
   const [isLoading, setIsLoading] = useState(isFirebaseEnabled);
   const [error, setError] = useState('');
 
@@ -381,6 +425,49 @@ export const DataProvider = ({ children }) => {
    * only cost of being wrong is one "Load more" that returns nothing new.
    */
   const [hasMore, setHasMore] = useState({});
+
+  /**
+   * Which academic year the board is showing. Defaults to the current one, so a
+   * student always lands on this council's work.
+   */
+  const [selectedYear, setSelectedYear] = useState(currentAcademicYear);
+
+  /** Earliest year with any content, discovered once (see the effect below). */
+  const [earliestYear, setEarliestYear] = useState(currentAcademicYear);
+
+  /**
+   * The academic year the board presents as "current".
+   *
+   * Deliberately a stored setting rather than a calculation. Deriving it from
+   * the calendar means the board silently empties itself the morning the new
+   * academic year begins — before the incoming council has posted anything, and
+   * while the outgoing one may not have handed over. Councils change over on
+   * their own schedule, so the switch is theirs to throw.
+   *
+   * Falls back to the derived year until an admin sets it.
+   */
+  const [activeYear, setActiveYear] = useState(currentAcademicYear);
+
+  /** Set once the visitor picks a year, so the stored setting stops overriding. */
+  const hasChosenYearRef = useRef(false);
+
+  const chooseYear = (year) => {
+    hasChosenYearRef.current = true;
+    setSelectedYear(year);
+  };
+
+  /** Declares which year the board presents as current. Admin only. */
+  const setActiveAcademicYear = async (year) => {
+    if (!isFirebaseEnabled || !db) return;
+    await setDoc(
+      doc(db, 'settings', 'board'),
+      { activeAcademicYear: year, updatedAt: serverTimestamp() },
+      { merge: true }
+    );
+    recordAudit('settings', 'settings', 'board', { title: `Active academic year set to ${year}` });
+    hasChosenYearRef.current = false;
+    setSelectedYear(year);
+  };
 
   useEffect(() => {
     if (!isFirebaseEnabled || !db) {
@@ -406,10 +493,35 @@ export const DataProvider = ({ children }) => {
     const unsubscribers = PUBLIC_COLLECTIONS.map((config) => {
       const cap = limits[config.key] ?? PAGE_SIZE;
 
+      /*
+       * Academic-year scoping happens here, on the server.
+       *
+       * The range is applied to the very field the query already orders by, so
+       * Firestore needs no composite index and no new field had to be added to
+       * a single existing document — the date a record carries is what decides
+       * which council's year it belongs to.
+       *
+       * Collections without an orderField (officers) cannot be filtered this
+       * way and are scoped client-side instead; standing documents (the
+       * constitution, request-letter templates) are not year-scoped at all,
+       * because hiding the by-laws while browsing an earlier year would be
+       * worse than useless.
+       */
+      const bounds = config.yearScoped ? academicYearBounds(selectedYear) : null;
+
       // orderBy would drop documents missing the field, so collections without a
       // date get a bare cap instead.
       const constraints = config.orderField
-        ? [orderBy(config.orderField, config.direction || 'desc'), limit(cap)]
+        ? [
+            ...(bounds
+              ? [
+                  where(config.orderField, '>=', bounds.start),
+                  where(config.orderField, '<=', bounds.end)
+                ]
+              : []),
+            orderBy(config.orderField, config.direction || 'desc'),
+            limit(cap)
+          ]
         : [limit(cap)];
 
       const sortFn = config.sort || (config.orderField ? byNewestDate(config.orderField) : null);
@@ -449,7 +561,79 @@ export const DataProvider = ({ children }) => {
       unsubscribers.forEach((unsubscribe) => unsubscribe());
       unsubResolutionVotes();
     };
-  }, [limits]);
+  }, [limits, selectedYear]);
+
+  // Switching year starts that year's browsing from the first page again.
+  useEffect(() => {
+    setLimits(PUBLIC_COLLECTIONS.reduce((acc, config) => ({ ...acc, [config.key]: PAGE_SIZE }), {}));
+  }, [selectedYear]);
+
+  /**
+   * Finds the oldest content so the year switcher only offers years that could
+   * actually have something in them.
+   *
+   * One ascending, single-document query per dated collection — a handful of
+   * reads, once per session, against the hundreds this used to spend loading
+   * every collection in full on every page load.
+   */
+  useEffect(() => {
+    if (!isFirebaseEnabled || !db) return;
+
+    let cancelled = false;
+
+    (async () => {
+      const dated = PUBLIC_COLLECTIONS.filter((config) => config.yearScoped);
+      const oldest = await Promise.all(
+        dated.map(async (config) => {
+          try {
+            const snapshot = await getDocs(
+              query(collection(db, config.key), orderBy(config.orderField, 'asc'), limit(1))
+            );
+            return snapshot.docs[0]?.data()?.[config.orderField] || '';
+          } catch (error) {
+            return '';
+          }
+        })
+      );
+
+      const earliestDate = oldest.filter(Boolean).sort()[0];
+      if (!cancelled && earliestDate) {
+        const year = academicYearOf(earliestDate);
+        if (year) setEarliestYear(year);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // The board's declared current year, kept in one shared document.
+  useEffect(() => {
+    if (!isFirebaseEnabled || !db) return undefined;
+
+    return onSnapshot(
+      doc(db, 'settings', 'board'),
+      (snapshot) => {
+        const stored = snapshot.exists() ? snapshot.data()?.activeAcademicYear : '';
+        const resolved = stored || currentAcademicYear();
+        setActiveYear(resolved);
+        // Only adopt the setting while the visitor has not chosen a year
+        // themselves, so a deliberate switch to the archive is not undone a
+        // moment later when this snapshot arrives.
+        if (!hasChosenYearRef.current) setSelectedYear(resolved);
+      },
+      () => {
+        /* No settings document yet: the derived year stands. */
+      }
+    );
+  }, []);
+
+  // Shared view counts. Public, like the tallies they resemble.
+  useEffect(() => subscribeToViewCounts(setViewCounts), []);
+
+  /** Newest first, current year at the top. */
+  const availableYears = useMemo(() => academicYearRange(earliestYear), [earliestYear]);
 
   /** Fetch another page of one collection. */
   const loadMore = (collectionKey) => {
@@ -464,7 +648,8 @@ export const DataProvider = ({ children }) => {
       setAnnouncements((prev) => [newItem, ...prev]);
       return;
     }
-    await addDoc(collection(db, 'announcements'), normalizeAnnouncement(payload));
+    const created = await addDoc(collection(db, 'announcements'), normalizeAnnouncement(payload));
+    recordAudit('create', 'announcements', created.id, payload);
   };
 
   const updateAnnouncement = async (id, payload) => {
@@ -473,6 +658,7 @@ export const DataProvider = ({ children }) => {
       return;
     }
     await updateDoc(doc(db, 'announcements', String(id)), normalizeAnnouncement(payload));
+    recordAudit('update', 'announcements', id, payload);
   };
 
   const deleteAnnouncement = async (id) => {
@@ -489,7 +675,8 @@ export const DataProvider = ({ children }) => {
       setEvents((prev) => [...prev, newItem]);
       return;
     }
-    await addDoc(collection(db, 'events'), normalizeEvent(payload));
+    const created = await addDoc(collection(db, 'events'), normalizeEvent(payload));
+    recordAudit('create', 'events', created.id, payload);
   };
 
   const updateEvent = async (id, payload) => {
@@ -498,6 +685,7 @@ export const DataProvider = ({ children }) => {
       return;
     }
     await updateDoc(doc(db, 'events', String(id)), normalizeEvent(payload));
+    recordAudit('update', 'events', id, payload);
   };
 
   const deleteEvent = async (id) => {
@@ -514,7 +702,8 @@ export const DataProvider = ({ children }) => {
       setResolutions((prev) => [newItem, ...prev]);
       return;
     }
-    await addDoc(collection(db, 'resolutions'), normalizeResolution(payload));
+    const created = await addDoc(collection(db, 'resolutions'), normalizeResolution(payload));
+    recordAudit('create', 'resolutions', created.id, payload);
   };
 
   const updateResolution = async (id, payload) => {
@@ -523,6 +712,7 @@ export const DataProvider = ({ children }) => {
       return;
     }
     await updateDoc(doc(db, 'resolutions', String(id)), normalizeResolution(payload));
+    recordAudit('update', 'resolutions', id, payload);
   };
 
   const deleteResolution = async (id) => {
@@ -539,7 +729,8 @@ export const DataProvider = ({ children }) => {
       setOfficers((prev) => [...prev, newItem]);
       return;
     }
-    await addDoc(collection(db, 'officers'), normalizeOfficer(payload));
+    const created = await addDoc(collection(db, 'officers'), normalizeOfficer(payload));
+    recordAudit('create', 'officers', created.id, payload);
   };
 
   const updateOfficer = async (id, payload) => {
@@ -548,6 +739,7 @@ export const DataProvider = ({ children }) => {
       return;
     }
     await updateDoc(doc(db, 'officers', String(id)), normalizeOfficer(payload));
+    recordAudit('update', 'officers', id, payload);
   };
 
   const deleteOfficer = async (id) => {
@@ -564,7 +756,8 @@ export const DataProvider = ({ children }) => {
       setMeetings((prev) => [newItem, ...prev]);
       return;
     }
-    await addDoc(collection(db, 'meetings'), normalizeMeeting(payload));
+    const created = await addDoc(collection(db, 'meetings'), normalizeMeeting(payload));
+    recordAudit('create', 'meetings', created.id, payload);
   };
 
   const updateMeeting = async (id, payload) => {
@@ -573,6 +766,7 @@ export const DataProvider = ({ children }) => {
       return;
     }
     await updateDoc(doc(db, 'meetings', String(id)), normalizeMeeting(payload));
+    recordAudit('update', 'meetings', id, payload);
   };
 
   const deleteMeeting = async (id) => {
@@ -589,7 +783,8 @@ export const DataProvider = ({ children }) => {
       setAccomplishments((prev) => [newItem, ...prev]);
       return;
     }
-    await addDoc(collection(db, 'accomplishments'), normalizeAccomplishment(payload));
+    const created = await addDoc(collection(db, 'accomplishments'), normalizeAccomplishment(payload));
+    recordAudit('create', 'accomplishments', created.id, payload);
   };
 
   const updateAccomplishment = async (id, payload) => {
@@ -598,6 +793,7 @@ export const DataProvider = ({ children }) => {
       return;
     }
     await updateDoc(doc(db, 'accomplishments', String(id)), normalizeAccomplishment(payload));
+    recordAudit('update', 'accomplishments', id, payload);
   };
 
   const deleteAccomplishment = async (id) => {
@@ -614,7 +810,8 @@ export const DataProvider = ({ children }) => {
       setRequestTypes((prev) => [...prev, newItem]);
       return;
     }
-    await addDoc(collection(db, 'requestTypes'), normalizeRequestType(payload));
+    const created = await addDoc(collection(db, 'requestTypes'), normalizeRequestType(payload));
+    recordAudit('create', 'requestTypes', created.id, payload);
   };
 
   const updateRequestType = async (id, payload) => {
@@ -623,6 +820,7 @@ export const DataProvider = ({ children }) => {
       return;
     }
     await updateDoc(doc(db, 'requestTypes', String(id)), normalizeRequestType(payload));
+    recordAudit('update', 'requestTypes', id, payload);
   };
 
   const deleteRequestType = async (id) => {
@@ -639,7 +837,8 @@ export const DataProvider = ({ children }) => {
       setMemorandums((prev) => [newItem, ...prev]);
       return;
     }
-    await addDoc(collection(db, 'memorandums'), normalizeMemorandum(payload));
+    const created = await addDoc(collection(db, 'memorandums'), normalizeMemorandum(payload));
+    recordAudit('create', 'memorandums', created.id, payload);
   };
 
   const updateMemorandum = async (id, payload) => {
@@ -648,6 +847,7 @@ export const DataProvider = ({ children }) => {
       return;
     }
     await updateDoc(doc(db, 'memorandums', String(id)), normalizeMemorandum(payload));
+    recordAudit('update', 'memorandums', id, payload);
   };
 
   const deleteMemorandum = async (id) => {
@@ -664,7 +864,8 @@ export const DataProvider = ({ children }) => {
       setNarrativeReports((prev) => [newItem, ...prev]);
       return;
     }
-    await addDoc(collection(db, 'narrativeReports'), normalizeNarrativeReport(payload));
+    const created = await addDoc(collection(db, 'narrativeReports'), normalizeNarrativeReport(payload));
+    recordAudit('create', 'narrativeReports', created.id, payload);
   };
 
   const updateNarrativeReport = async (id, payload) => {
@@ -673,6 +874,7 @@ export const DataProvider = ({ children }) => {
       return;
     }
     await updateDoc(doc(db, 'narrativeReports', String(id)), normalizeNarrativeReport(payload));
+    recordAudit('update', 'narrativeReports', id, payload);
   };
 
   const deleteNarrativeReport = async (id) => {
@@ -688,7 +890,8 @@ export const DataProvider = ({ children }) => {
       setConstitutionDocs((prev) => [{ id: Date.now(), ...normalizeConstitutionDoc(payload) }, ...prev]);
       return;
     }
-    await addDoc(collection(db, 'constitution'), normalizeConstitutionDoc(payload));
+    const created = await addDoc(collection(db, 'constitution'), normalizeConstitutionDoc(payload));
+    recordAudit('create', 'constitution', created.id, payload);
   };
 
   const updateConstitutionDoc = async (id, payload) => {
@@ -699,6 +902,7 @@ export const DataProvider = ({ children }) => {
       return;
     }
     await updateDoc(doc(db, 'constitution', String(id)), normalizeConstitutionDoc(payload));
+    recordAudit('update', 'constitution', id, payload);
   };
 
   const deleteConstitutionDoc = async (id) => {
@@ -716,6 +920,8 @@ export const DataProvider = ({ children }) => {
       setTickets([]);
       setSuggestions([]);
       setSubscribers([]);
+      setDrafts([]);
+      setAuditLog([]);
       return undefined;
     }
 
@@ -746,12 +952,86 @@ export const DataProvider = ({ children }) => {
       () => setError('Failed to load alert subscribers.')
     );
 
+    // Unpublished announcements. Admin-only by collection, so a draft cannot be
+    // read off the API by anyone else however the UI behaves.
+    const unsubDrafts = onSnapshot(
+      collection(db, 'announcementDrafts'),
+      (snapshot) => setDrafts(sortByNewest(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })))),
+      () => setError('Failed to load announcement drafts.')
+    );
+
+    // Append-only history of admin actions.
+    const unsubAudit = onSnapshot(
+      query(collection(db, 'auditLog'), orderBy('at', 'desc'), limit(200)),
+      (snapshot) => setAuditLog(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))),
+      () => setError('Failed to load the audit log.')
+    );
+
     return () => {
       unsubTickets();
       unsubSuggestions();
       unsubSubscribers();
+      unsubDrafts();
+      unsubAudit();
     };
   }, [isSscAdmin]);
+
+  // ---- drafts and scheduling ----
+
+  const saveDraft = async (payload, id = null) => {
+    if (!isFirebaseEnabled || !db) throw new Error('The cloud database is not configured.');
+    const body = { ...normalizeDraft(payload), updatedAt: serverTimestamp() };
+    if (id) {
+      await updateDoc(doc(db, 'announcementDrafts', String(id)), body);
+      return String(id);
+    }
+    const created = await addDoc(collection(db, 'announcementDrafts'), {
+      ...body,
+      createdAt: serverTimestamp()
+    });
+    return created.id;
+  };
+
+  const deleteDraft = async (id) => {
+    if (!isFirebaseEnabled || !db) return;
+    await deleteDoc(doc(db, 'announcementDrafts', String(id)));
+  };
+
+  /** Moves a draft into the public collection. */
+  const publishDraft = async (draft) => {
+    if (!isFirebaseEnabled || !db) throw new Error('The cloud database is not configured.');
+    await addDoc(collection(db, 'announcements'), {
+      ...normalizeAnnouncement(draft),
+      // Publishing dates the post now, not whenever it was first drafted.
+      date: new Date().toISOString().split('T')[0]
+    });
+    await deleteDoc(doc(db, 'announcementDrafts', String(draft.id)));
+    recordAudit('publish', 'announcements', draft.id, draft);
+  };
+
+  /**
+   * Publishes any scheduled draft whose time has passed.
+   *
+   * The honest limitation of scheduling on a site with no server: nothing can
+   * run at 08:00 on Monday by itself. This runs whenever an admin opens the
+   * dashboard, so a scheduled post goes live the next time an officer is
+   * looking — same day in practice, but not to the minute. The UI says so
+   * rather than implying a cron job exists. NOTIFICATIONS.md describes the
+   * Cloud Function that would make it exact.
+   */
+  const publishScheduledDrafts = async () => {
+    if (!isFirebaseEnabled || !db || !isSscAdmin) return 0;
+    const now = Date.now();
+    const due = drafts.filter((draft) => draft.publishAt && new Date(draft.publishAt).getTime() <= now);
+    for (const draft of due) {
+      try {
+        await publishDraft(draft);
+      } catch (error) {
+        /* leave it queued; the next dashboard load retries */
+      }
+    }
+    return due.length;
+  };
 
   /**
    * Records or updates an email alert subscription. Open to everyone — a
@@ -906,12 +1186,22 @@ export const DataProvider = ({ children }) => {
     return resolutionVotes.find((vote) => vote.id === voteDocId(resolutionId, uid)) || null;
   };
 
+  /**
+   * Officers for the selected year. A record with no `academicYear` predates the
+   * field and is shown under the current year rather than disappearing.
+   */
+  const officersForYear = useMemo(() => {
+    const current = currentAcademicYear();
+    return officers.filter((officer) => (officer.academicYear || current) === selectedYear);
+  }, [officers, selectedYear]);
+
   const value = useMemo(
     () => ({
       announcements,
       events,
       resolutions,
-      officers,
+      officers: officersForYear,
+      allOfficers: officers,
       meetings,
       accomplishments,
       requestTypes,
@@ -925,6 +1215,15 @@ export const DataProvider = ({ children }) => {
       hasMore,
       loadMore,
       pageSize: PAGE_SIZE,
+      // Academic year. Dated content is filtered server-side by the listeners;
+      // officers are filtered here because they carry the year explicitly.
+      selectedYear,
+      setSelectedYear: chooseYear,
+      availableYears,
+      // "Current" is what the council has declared, not what the calendar says.
+      currentYear: activeYear,
+      setActiveAcademicYear,
+      isViewingArchive: selectedYear !== activeYear,
       createAnnouncement,
       updateAnnouncement,
       deleteAnnouncement,
@@ -965,6 +1264,16 @@ export const DataProvider = ({ children }) => {
       createSuggestion,
       updateSuggestion,
       deleteSuggestion,
+      auditLog,
+      // Shared read counts. getViewCount reads, trackView records one.
+      viewCounts,
+      getViewCount: (collectionName, id) => viewCounts[viewDocId(collectionName, id)] || 0,
+      trackView: registerView,
+      drafts,
+      saveDraft,
+      deleteDraft,
+      publishDraft,
+      publishScheduledDrafts,
       subscribers,
       subscribeToAlerts,
       unsubscribeFromAlerts,
@@ -975,7 +1284,7 @@ export const DataProvider = ({ children }) => {
       getResolutionTally,
       getMyResolutionVote
     }),
-    [announcements, events, resolutions, officers, meetings, accomplishments, requestTypes, memorandums, narrativeReports, constitutionDocs, resolutionVotes, voteTallies, tickets, suggestions, subscribers, isLoading, error, hasMore]
+    [announcements, events, resolutions, officers, meetings, accomplishments, requestTypes, memorandums, narrativeReports, constitutionDocs, resolutionVotes, voteTallies, tickets, suggestions, subscribers, isLoading, error, hasMore, selectedYear, activeYear, availableYears, officersForYear, drafts, auditLog, viewCounts]
   );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

@@ -242,3 +242,19 @@
   .lightbox-nav.prev { left: 0.4rem; }
   .lightbox-nav.next { right: 0.4rem; }
 }
+
+/* The main slide is a button so the keyboard can open the lightbox; it must
+   still look exactly like a bare image. */
+.carousel-image-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+}
+
+.carousel-image-btn:focus-visible {
+  outline: 3px solid var(--primary-500);
+  outline-offset: 2px;
+}

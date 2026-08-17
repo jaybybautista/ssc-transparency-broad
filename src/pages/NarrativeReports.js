@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useContext, useRef } from 'react';
 import { FiBook, FiCalendar, FiUsers, FiFileText, FiEye, FiX, FiEdit2, FiTrash2, FiPlus, FiDownload } from 'react-icons/fi';
 import { AuthContext } from '../App';
 import { useData } from '../context/DataContext';
@@ -19,7 +19,7 @@ import './NarrativeReports.css';
 const NarrativeReports = () => {
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
-  const { narrativeReports: reports, createNarrativeReport, updateNarrativeReport, deleteNarrativeReport } = useData();
+  const { narrativeReports: reports, createNarrativeReport, updateNarrativeReport, deleteNarrativeReport, getViewCount: getSharedViewCount, trackView} = useData();
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   const [viewerFile, setViewerFile] = useState(null);
@@ -191,26 +191,11 @@ const NarrativeReports = () => {
     }
   };
 
-  // View counts state (persisted in localStorage)
-  const [viewCounts, setViewCounts] = useState(() => {
-    const saved = localStorage.getItem('narrativeViewCounts');
-    return saved ? JSON.parse(saved) : {};
-  });
+  // Shared view counts, held in Firestore. These used to be per-device
+  // localStorage numbers, which meant everyone saw a different figure.
+  const getViewCount = (id) => getSharedViewCount('narrativeReports', id);
+  const incrementViewCount = (id) => trackView('narrativeReports', id);
 
-  useEffect(() => {
-    localStorage.setItem('narrativeViewCounts', JSON.stringify(viewCounts));
-  }, [viewCounts]);
-
-  const getViewCount = (id) => {
-    return viewCounts[`narrative-${id}`] || 0;
-  };
-
-  const incrementViewCount = (id) => {
-    setViewCounts(prev => ({
-      ...prev,
-      [`narrative-${id}`]: (prev[`narrative-${id}`] || 0) + 1
-    }));
-  };
 
   const openModal = (report) => {
     setSelectedReport(report);
@@ -237,7 +222,9 @@ const NarrativeReports = () => {
       )
     : reports;
 
-  useModalBehaviour(showAdminModal, () => setShowAdminModal(false));
+  // Handed to useModalBehaviour so Tab stays inside the dialog.
+  const adminModalRef = useRef(null);
+  useModalBehaviour(showAdminModal, () => setShowAdminModal(false), adminModalRef);
 
   return (
     <div className="narrative-page">
@@ -459,7 +446,7 @@ const NarrativeReports = () => {
       {/* Admin Modal */}
       {showAdminModal && (
         <div className="admin-modal-overlay" onClick={() => setShowAdminModal(false)}>
-          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="admin-modal" ref={adminModalRef} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-header">
               <h3>{editItem ? 'Edit Report' : 'Add New Report'}</h3>
               <button className="admin-modal-close" onClick={() => setShowAdminModal(false)}>

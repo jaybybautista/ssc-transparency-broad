@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useContext, useRef } from 'react';
 import { FiClipboard, FiUsers, FiMapPin, FiCalendar, FiFileText, FiEye, FiX, FiEdit2, FiTrash2, FiPlus, FiDownload } from 'react-icons/fi';
 import { AuthContext } from '../App';
 import { useData } from '../context/DataContext';
@@ -19,7 +19,7 @@ import './MOM.css';
 const MOM = () => {
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
-  const { meetings, createMeeting, updateMeeting, deleteMeeting } = useData();
+  const { meetings, createMeeting, updateMeeting, deleteMeeting, getViewCount: getSharedViewCount, trackView} = useData();
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [viewerFile, setViewerFile] = useState(null);
@@ -184,26 +184,11 @@ const MOM = () => {
     }
   };
 
-  // View counts state (persisted in localStorage)
-  const [viewCounts, setViewCounts] = useState(() => {
-    const saved = localStorage.getItem('momViewCounts');
-    return saved ? JSON.parse(saved) : {};
-  });
+  // Shared view counts, held in Firestore. These used to be per-device
+  // localStorage numbers, which meant everyone saw a different figure.
+  const getViewCount = (id) => getSharedViewCount('meetings', id);
+  const incrementViewCount = (id) => trackView('meetings', id);
 
-  useEffect(() => {
-    localStorage.setItem('momViewCounts', JSON.stringify(viewCounts));
-  }, [viewCounts]);
-
-  const getViewCount = (id) => {
-    return viewCounts[`mom-${id}`] || 0;
-  };
-
-  const incrementViewCount = (id) => {
-    setViewCounts(prev => ({
-      ...prev,
-      [`mom-${id}`]: (prev[`mom-${id}`] || 0) + 1
-    }));
-  };
 
   const openModal = (meeting) => {
     setSelectedMeeting(meeting);
@@ -229,7 +214,9 @@ const MOM = () => {
       )
     : meetings;
 
-  useModalBehaviour(showAdminModal, () => setShowAdminModal(false));
+  // Handed to useModalBehaviour so Tab stays inside the dialog.
+  const adminModalRef = useRef(null);
+  useModalBehaviour(showAdminModal, () => setShowAdminModal(false), adminModalRef);
 
   return (
     <div className="mom-page">
@@ -480,7 +467,7 @@ const MOM = () => {
       {/* Admin Modal */}
       {showAdminModal && (
         <div className="admin-modal-overlay" onClick={() => setShowAdminModal(false)}>
-          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="admin-modal" ref={adminModalRef} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-header">
               <h3>{editItem ? 'Edit Meeting Record' : 'Add New Meeting Record'}</h3>
               <button className="admin-modal-close" onClick={() => setShowAdminModal(false)}>

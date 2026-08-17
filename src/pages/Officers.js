@@ -10,6 +10,7 @@ import AdminSearchBar, { matchesQuery } from '../components/AdminSearchBar';
 import OfficerAvatar from '../components/OfficerAvatar';
 import ViewToggle from '../components/ViewToggle';
 import '../components/OfficerListView.css';
+import { formatAcademicYear } from '../lib/academicYear';
 import './Officers.css';
 
 const DIVISIONS = [
@@ -24,7 +25,7 @@ const DIVISIONS = [
 const Officers = () => {
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
-  const { officers, createOfficer, updateOfficer, deleteOfficer } = useData();
+  const { officers, createOfficer, updateOfficer, deleteOfficer, selectedYear, availableYears } = useData();
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,7 +42,8 @@ const Officers = () => {
     yearLevel: '',
     image: '',
     email: '',
-    quote: ''
+    quote: '',
+    academicYear: ''
   });
   const fileInputRef = useRef(null);
 
@@ -61,7 +63,7 @@ const Officers = () => {
 
   const handleAdd = () => {
     setEditItem(null);
-    setFormData({ name: '', position: '', division: 'Core Officers', course: '', yearLevel: '', image: '', email: '', quote: '' });
+    setFormData({ name: '', position: '', division: 'Core Officers', course: '', yearLevel: '', image: '', email: '', quote: '', academicYear: selectedYear });
     setSelectedImageFile(null);
     setPreviewUrl('');
     setUploadStatus('');
@@ -78,7 +80,10 @@ const Officers = () => {
       yearLevel: officer.yearLevel || '',
       image: officer.image || '',
       email: officer.email || '',
-      quote: officer.quote || ''
+      quote: officer.quote || '',
+      // Officers saved before year-scoping existed have no field; they belong
+      // to the year currently being viewed.
+      academicYear: officer.academicYear || selectedYear
     });
     setSelectedImageFile(null);
     setPreviewUrl(officer.image || '');
@@ -161,7 +166,9 @@ const Officers = () => {
       )
     : officers;
 
-  useModalBehaviour(showAdminModal, () => setShowAdminModal(false));
+  // Handed to useModalBehaviour so Tab stays inside the dialog.
+  const adminModalRef = useRef(null);
+  useModalBehaviour(showAdminModal, () => setShowAdminModal(false), adminModalRef);
 
   return (
     <div className="officers-page">
@@ -273,7 +280,7 @@ const Officers = () => {
 
       {showAdminModal && (
         <div className="admin-modal-overlay" onClick={() => setShowAdminModal(false)}>
-          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="admin-modal" ref={adminModalRef} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-header">
               <h3>{editItem ? 'Edit Officer' : 'Add New Officer'}</h3>
               <button className="admin-modal-close" onClick={() => setShowAdminModal(false)}>
@@ -290,6 +297,18 @@ const Officers = () => {
                     <option key={division} value={division}>{division}</option>
                   ))}
                 </select>
+              </div>
+              <div className="form-group">
+                <label>Academic Year</label>
+                <select
+                  value={formData.academicYear || selectedYear}
+                  onChange={(e) => setFormData({ ...formData, academicYear: e.target.value })}
+                >
+                  {availableYears.map((year) => (
+                    <option key={year} value={year}>{formatAcademicYear(year)}</option>
+                  ))}
+                </select>
+                <small>Officers are listed under the year they served.</small>
               </div>
               <div className="form-group">
                 <label>Program</label>

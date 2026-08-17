@@ -134,7 +134,9 @@ const MemorandumOrders = () => {
     ? memos.filter((memo) => matchesQuery(searchTerm, [memo.number, memo.title, richTextToPlain(memo.description)]))
     : memos;
 
-  useModalBehaviour(showAdminModal, () => setShowAdminModal(false));
+  // Handed to useModalBehaviour so Tab stays inside the dialog.
+  const adminModalRef = useRef(null);
+  useModalBehaviour(showAdminModal, () => setShowAdminModal(false), adminModalRef);
 
   return (
     <div className="memorandum-page">
@@ -257,7 +259,7 @@ const MemorandumOrders = () => {
       {/* Admin Modal */}
       {showAdminModal && (
         <div className="admin-modal-overlay" onClick={() => setShowAdminModal(false)}>
-          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="admin-modal" ref={adminModalRef} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-header">
               <h3>{editItem ? 'Edit Memorandum' : 'Add New Memorandum'}</h3>
               <button className="admin-modal-close" onClick={() => setShowAdminModal(false)}>

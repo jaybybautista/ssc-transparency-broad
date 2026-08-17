@@ -6,11 +6,16 @@ import { SiGmail } from 'react-icons/si';
 import sscLogo from '../../assets/ssc_logo.svg';
 import psuLogo from '../../assets/psu_logo.svg';
 import { useTheme } from '../../context/ThemeContext';
+import { useData } from '../../context/DataContext';
+import { formatAcademicYear } from '../../lib/academicYear';
 import './Footer.css';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   const { isDark, toggleTheme } = useTheme();
+  // Was hardcoded "A.Y. 2025-2026", which would have quietly gone stale the
+  // moment this council handed over.
+  const { selectedYear } = useData();
 
   return (
     <footer className="footer">
@@ -30,7 +35,7 @@ const Footer = () => {
               </div>
               <p className="footer-description">
                 Pangasinan State University - Urdaneta City Campus. Promoting transparency, 
-                accountability, and student engagement through digital innovation. A.Y. 2025-2026
+                accountability, and student engagement through digital innovation. {formatAcademicYear(selectedYear)}
               </p>
               <div className="footer-social">
                 <a href="https://facebook.com/PSUurdanetaSSC" className="social-link facebook" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
@@ -88,7 +93,7 @@ const Footer = () => {
           {/* The heart is the theme switch — an easter egg rather than a
               labelled control, so it carries its own accessible name. */}
           <p>
-            A.Y. 2025-2026 | Developed with{' '}
+            {formatAcademicYear(selectedYear)} | Developed with{' '}
             <button
               type="button"
               className={`theme-heart ${isDark ? 'is-dark' : ''}`}

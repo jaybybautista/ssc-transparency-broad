@@ -2,6 +2,10 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FiMenu, FiChevronDown, FiUser, FiMail, FiArrowLeft } from 'react-icons/fi';
 import { AuthContext } from '../../App';
+import AcademicYearPicker from '../AcademicYearPicker';
+import { GlobalSearchButton } from '../GlobalSearch';
+import LanguageToggle from '../LanguageToggle';
+import { useLanguage } from '../../context/LanguageContext';
 import sscLogo from '../../assets/ssc_logo.svg';
 import psuLogo from '../../assets/psu_logo.svg';
 import './Navbar.css';
@@ -12,6 +16,7 @@ const Navbar = ({ setSidebarOpen }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAdmin } = useContext(AuthContext);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -94,9 +99,12 @@ const Navbar = ({ setSidebarOpen }) => {
         </ul>
 
         <div className="navbar-actions">
+          <GlobalSearchButton />
+          <LanguageToggle />
+          <AcademicYearPicker />
           <Link to="/ssc/contact" className="connect-btn">
             <FiMail />
-            <span>Connect with SSC</span>
+            <span>{t('nav.contact')}</span>
           </Link>
           
           {isAdmin ? (
@@ -108,12 +116,12 @@ const Navbar = ({ setSidebarOpen }) => {
               onClick={() => navigate('/')}
             >
               <FiArrowLeft />
-              <span>Return as User</span>
+              <span>{t('nav.returnAsUser')}</span>
             </button>
           ) : (
             <Link to="/admin" className="admin-btn">
               <FiUser />
-              <span>Admin</span>
+              <span>{t('nav.admin')}</span>
             </Link>
           )}
           

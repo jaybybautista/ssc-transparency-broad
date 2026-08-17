@@ -1,40 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiFileText, FiArrowRight, FiBell, FiAward, FiCreditCard, FiAlertCircle, FiInfo, FiEye, FiX, FiCalendar, FiClock } from 'react-icons/fi';
-import { announcements, memorandumOrders } from '../data/sampleData';
+import { useData } from '../context/DataContext';
 import './TransparencyBoard.css';
 
 const TransparencyBoard = () => {
-  const pinnedAnnouncements = announcements.filter(a => a.isPinned);
-  const recentMemos = memorandumOrders.slice(0, 3);
+  // This page read from `sampleData` — the hardcoded demo content — so the
+  // landing page showed invented announcements rather than the board's own,
+  // however much real content had been published.
+  const {
+    announcements,
+    memorandums,
+    getViewCount: getSharedViewCount,
+    trackView
+  } = useData();
+
+  const pinnedAnnouncements = announcements.filter((a) => a.isPinned);
+  const recentMemos = memorandums.slice(0, 3);
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [modalType, setModalType] = useState('announcement'); // 'announcement' or 'memo'
 
-  // View counts state (persisted in localStorage)
-  const [viewCounts, setViewCounts] = useState(() => {
-    const saved = localStorage.getItem('transparencyViewCounts');
-    return saved ? JSON.parse(saved) : {};
-  });
-
-  useEffect(() => {
-    localStorage.setItem('transparencyViewCounts', JSON.stringify(viewCounts));
-  }, [viewCounts]);
-
-  const getViewCount = (type, id) => {
-    const key = `${type}-${id}`;
-    return viewCounts[key] || 0;
-  };
-
-  const incrementViewCount = (type, id) => {
-    const key = `${type}-${id}`;
-    setViewCounts(prev => ({
-      ...prev,
-      [key]: (prev[key] || 0) + 1
-    }));
-  };
+  // Shared view counts, held in Firestore. `type` is this page's own label
+  // for the item, mapped to the collection its counter is keyed on.
+  const COLLECTION_FOR_TYPE = { announcement: 'announcements', memo: 'memorandums' };
+  const getViewCount = (type, id) => getSharedViewCount(COLLECTION_FOR_TYPE[type] || type, id);
+  const incrementViewCount = (type, id) => trackView(COLLECTION_FOR_TYPE[type] || type, id);
 
   const openModal = (item, type) => {
     setSelectedItem(item);

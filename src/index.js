@@ -6,6 +6,7 @@ import { DataProvider } from './context/DataContext';
 import { VoterAuthProvider } from './context/VoterAuthContext';
 import { DialogProvider } from './components/DialogProvider';
 import { ThemeProvider } from './context/ThemeContext';
+import { LanguageProvider } from './context/LanguageContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import './styles/global.css';
 
@@ -15,8 +16,9 @@ root.render(
     {/* Outermost boundary: catches a throw from any provider, which would
         otherwise unmount everything and leave a white page. */}
     <ErrorBoundary>
-      <ThemeProvider>
-        <DialogProvider>
+      <LanguageProvider>
+        <ThemeProvider>
+          <DialogProvider>
           <VoterAuthProvider>
             <DataProvider>
               <BrowserRouter>
@@ -24,8 +26,9 @@ root.render(
               </BrowserRouter>
             </DataProvider>
           </VoterAuthProvider>
-        </DialogProvider>
-      </ThemeProvider>
+          </DialogProvider>
+        </ThemeProvider>
+      </LanguageProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );

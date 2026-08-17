@@ -1,34 +1,36 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { FiX, FiEye, FiCalendar, FiUsers, FiTarget, FiFileText, FiClipboard, FiBook, FiAward, FiSend, FiBell, FiFile, FiBookOpen } from 'react-icons/fi';
+import { useLanguage } from '../../context/LanguageContext';
 import './Sidebar.css';
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
+  const { t } = useLanguage();
 
   const menuItems = [
     { 
-      label: 'Virtual Transparency Board',
+      label: t('nav.transparencyBoard'),
       icon: FiEye,
       children: [
-        { path: '/', label: 'Overview', icon: FiEye },
-        { path: '/announcements', label: 'Announcements', icon: FiBell },
-        { path: '/memorandum', label: 'Memorandum Orders', icon: FiFile },
+        { path: '/', label: t('nav.overview'), icon: FiEye },
+        { path: '/announcements', label: t('nav.announcements'), icon: FiBell },
+        { path: '/memorandum', label: t('nav.memorandum'), icon: FiFile },
       ]
     },
-    { path: '/calendar', label: 'Calendar of Activities', icon: FiCalendar },
+    { path: '/calendar', label: t('nav.calendar'), icon: FiCalendar },
     { 
       label: 'SSC',
       icon: FiUsers,
       children: [
-        { path: '/ssc', label: 'Overview', icon: FiUsers },
-        { path: '/ssc/about', label: 'About SSC', icon: FiTarget },
-        { path: '/ssc/constitution', label: 'Constitution & By-Laws', icon: FiBookOpen },
-        { path: '/ssc/resolutions', label: 'Resolutions', icon: FiFileText },
-        { path: '/ssc/minutes-of-meeting', label: 'Minutes of Meeting', icon: FiClipboard },
-        { path: '/ssc/narrative-reports', label: 'Narrative Reports', icon: FiBook },
-        { path: '/ssc/accomplishments', label: 'Accomplishment Tracker', icon: FiAward },
-        { path: '/ssc/request-letters', label: 'Request Letters', icon: FiSend },
+        { path: '/ssc', label: t('nav.overview'), icon: FiUsers },
+        { path: '/ssc/about', label: t('nav.about'), icon: FiTarget },
+        { path: '/ssc/constitution', label: t('nav.constitution'), icon: FiBookOpen },
+        { path: '/ssc/resolutions', label: t('nav.resolutions'), icon: FiFileText },
+        { path: '/ssc/minutes-of-meeting', label: t('nav.minutes'), icon: FiClipboard },
+        { path: '/ssc/narrative-reports', label: t('nav.reports'), icon: FiBook },
+        { path: '/ssc/accomplishments', label: t('nav.accomplishments'), icon: FiAward },
+        { path: '/ssc/request-letters', label: t('nav.requestLetters'), icon: FiSend },
       ]
     },
   ];

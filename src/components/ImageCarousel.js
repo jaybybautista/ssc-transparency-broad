@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FiChevronLeft, FiChevronRight, FiX, FiZoomIn, FiZoomOut, FiMaximize2 } from 'react-icons/fi';
 import './ImageCarousel.css';
 
@@ -14,6 +14,8 @@ const ImageCarousel = ({ images = [], alt = 'Image', className = '' }) => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [zoomed, setZoomed] = useState(false);
   const [origin, setOrigin] = useState({ x: 50, y: 50 });
+  const lightboxRef = useRef(null);
+  const openerRef = useRef(null);
 
   const total = photos.length;
 
@@ -34,7 +36,29 @@ const ImageCarousel = ({ images = [], alt = 'Image', className = '' }) => {
   useEffect(() => {
     if (!lightboxOpen) return undefined;
 
+    // Move focus into the lightbox, and keep Tab inside it: the page behind is
+    // still rendered, so without this the keyboard walks straight out of a
+    // dialog that is visually covering everything.
+    const focusable = () =>
+      [...(lightboxRef.current?.querySelectorAll('button, [tabindex]:not([tabindex="-1"])') || [])];
+
+    const focusTimer = setTimeout(() => focusable()[0]?.focus(), 0);
+
     const handleKey = (e) => {
+      if (e.key === 'Tab') {
+        const nodes = focusable();
+        if (nodes.length) {
+          const first = nodes[0];
+          const last = nodes[nodes.length - 1];
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
       if (e.key === 'Escape') closeLightbox();
       if (e.key === 'ArrowRight') goTo(index + 1);
       if (e.key === 'ArrowLeft') goTo(index - 1);
@@ -45,10 +69,28 @@ const ImageCarousel = ({ images = [], alt = 'Image', className = '' }) => {
     document.body.style.overflow = 'hidden';
 
     return () => {
+      clearTimeout(focusTimer);
       document.removeEventListener('keydown', handleKey);
       document.body.style.overflow = previousOverflow;
+      openerRef.current?.focus?.();
     };
   }, [lightboxOpen, index, goTo, closeLightbox]);
+
+  // Arrow keys move the carousel while it has focus, not only in the lightbox.
+  const handleCarouselKey = (e) => {
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      goTo(index + 1);
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      goTo(index - 1);
+    }
+  };
+
+  const openLightbox = (event) => {
+    openerRef.current = event?.currentTarget || null;
+    setLightboxOpen(true);
+  };
 
   if (!total) return null;
 
@@ -64,21 +106,36 @@ const ImageCarousel = ({ images = [], alt = 'Image', className = '' }) => {
   return (
     <>
       <div className={`carousel ${className}`.trim()}>
-        <div className="carousel-stage">
-          <img
-            src={photos[index]}
-            alt={`${alt} ${index + 1} of ${total}`}
-            className="carousel-image"
-            onClick={() => setLightboxOpen(true)}
-          />
+        <div
+          className="carousel-stage"
+          role="group"
+          aria-roledescription="carousel"
+          aria-label={`${alt} — ${total} image${total === 1 ? '' : 's'}`}
+          onKeyDown={handleCarouselKey}
+        >
+          {/* A button rather than a clickable <img>: an image with an onClick
+              cannot be reached or activated from the keyboard. */}
+          <button
+            type="button"
+            className="carousel-image-btn"
+            onClick={openLightbox}
+            aria-label={`View ${alt}, image ${index + 1} of ${total}, full screen`}
+          >
+            <img
+              src={photos[index]}
+              alt={`${alt} — ${index + 1} of ${total}`}
+              className="carousel-image"
+            />
+          </button>
 
           <button
             type="button"
             className="carousel-expand"
             title="View full screen"
+            aria-label="View full screen"
             onClick={(e) => {
               e.stopPropagation();
-              setLightboxOpen(true);
+              openLightbox(e);
             }}
           >
             <FiMaximize2 />
@@ -126,7 +183,8 @@ const ImageCarousel = ({ images = [], alt = 'Image', className = '' }) => {
                   e.stopPropagation();
                   goTo(photoIndex);
                 }}
-                aria-label={`Show image ${photoIndex + 1}`}
+                aria-label={`Show image ${photoIndex + 1} of ${total}`}
+                aria-current={photoIndex === index}
               >
                 <img src={photo} alt="" />
               </button>
@@ -136,7 +194,14 @@ const ImageCarousel = ({ images = [], alt = 'Image', className = '' }) => {
       </div>
 
       {lightboxOpen && (
-        <div className="lightbox-overlay" onClick={closeLightbox}>
+        <div
+          className="lightbox-overlay"
+          onClick={closeLightbox}
+          ref={lightboxRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${alt} — image ${index + 1} of ${total}`}
+        >
           <div className="lightbox-toolbar" onClick={(e) => e.stopPropagation()}>
             <span className="lightbox-counter">
               {index + 1} / {total}

@@ -15,7 +15,7 @@ import './Calendar.css';
 const Calendar = () => {
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
-  const { events, createEvent, updateEvent, deleteEvent } = useData();
+  const { events, createEvent, updateEvent, deleteEvent, getViewCount: getSharedViewCount, trackView} = useData();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -124,26 +124,11 @@ const Calendar = () => {
     }
   };
 
-  // View counts state (persisted in localStorage)
-  const [viewCounts, setViewCounts] = useState(() => {
-    const saved = localStorage.getItem('calendarViewCounts');
-    return saved ? JSON.parse(saved) : {};
-  });
+  // Shared view counts, held in Firestore. These used to be per-device
+  // localStorage numbers, which meant everyone saw a different figure.
+  const getViewCount = (id) => getSharedViewCount('events', id);
+  const incrementViewCount = (id) => trackView('events', id);
 
-  useEffect(() => {
-    localStorage.setItem('calendarViewCounts', JSON.stringify(viewCounts));
-  }, [viewCounts]);
-
-  const getViewCount = (id) => {
-    return viewCounts[`event-${id}`] || 0;
-  };
-
-  const incrementViewCount = (id) => {
-    setViewCounts(prev => ({
-      ...prev,
-      [`event-${id}`]: (prev[`event-${id}`] || 0) + 1
-    }));
-  };
 
   const openModal = (event) => {
     setSelectedEvent(event);
@@ -285,7 +270,9 @@ const Calendar = () => {
   const filteredEvents = getFilteredEvents();
   const upcomingEvents = filteredEvents.filter(e => new Date(e.date) >= new Date());
 
-  useModalBehaviour(showAdminModal, () => setShowAdminModal(false));
+  // Handed to useModalBehaviour so Tab stays inside the dialog.
+  const adminModalRef = useRef(null);
+  useModalBehaviour(showAdminModal, () => setShowAdminModal(false), adminModalRef);
 
   return (
     <div className="calendar-page">
@@ -607,7 +594,7 @@ const Calendar = () => {
       {/* Admin Modal */}
       {showAdminModal && (
         <div className="admin-modal-overlay" onClick={() => setShowAdminModal(false)}>
-          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="admin-modal" ref={adminModalRef} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-header">
               <h3>{editItem ? 'Edit Event' : 'Add New Event'}</h3>
               <button className="admin-modal-close" onClick={() => setShowAdminModal(false)}>

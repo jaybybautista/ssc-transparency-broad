@@ -6,6 +6,8 @@ import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
 import Sidebar from './components/Layout/Sidebar';
 import ErrorBoundary from './components/ErrorBoundary';
+import { ArchiveNotice } from './components/AcademicYearPicker';
+import UpdatePrompt from './components/UpdatePrompt';
 
 // Pages
 import TransparencyBoard from './pages/TransparencyBoard';
@@ -27,6 +29,7 @@ import AdminLogin from './pages/Admin/AdminLogin';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 
 import { useVoterAuth } from './context/VoterAuthContext';
+import { useLanguage } from './context/LanguageContext';
 
 /**
  * Admin state, consumed by every page to decide whether to show edit controls.
@@ -40,16 +43,24 @@ import { useVoterAuth } from './context/VoterAuthContext';
 export const AuthContext = createContext();
 
 // Layout wrapper for public pages
-const PublicLayout = ({ children, setSidebarOpen, sidebarOpen }) => (
+const PublicLayout = ({ children, setSidebarOpen, sidebarOpen }) => {
+  const { t } = useLanguage();
+  return (
   <>
     <Navbar setSidebarOpen={setSidebarOpen} />
     <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
-    <main className="main-content">
+    {/* First stop for a keyboard or screen reader: jumps past the whole nav. */}
+    <a className="skip-link" href="#main-content">{t('a11y.skipToContent')}</a>
+    <main className="main-content" id="main-content" tabIndex={-1}>
+      {/* Makes it unmistakable when the visitor is looking at a past council's
+          work rather than this one's. */}
+      <ArchiveNotice />
       {children}
     </main>
     <Footer />
   </>
-);
+  );
+};
 
 function App() {
   const { isSscAdmin, isCheckingAdmin, isAuthLoading, voter, signOut } = useVoterAuth();
@@ -75,6 +86,9 @@ function App() {
   return (
     <AuthContext.Provider value={authValue}>
       <div className="app">
+        {/* Offline support, and the two prompts that come with it. */}
+        <UpdatePrompt />
+
         {isAdminRoute ? (
           // Admin routes without public layout
           <ErrorBoundary key={location.pathname} scope="This admin page">

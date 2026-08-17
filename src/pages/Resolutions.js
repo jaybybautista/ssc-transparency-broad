@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useContext, useRef } from 'react';
 import { FiFileText, FiCheckCircle, FiClock, FiThumbsUp, FiThumbsDown, FiMinus, FiEye, FiX, FiCalendar, FiEdit2, FiTrash2, FiPlus, FiDownload, FiLock, FiLogIn, FiUser } from 'react-icons/fi';
 import { AuthContext } from '../App';
 import { useData } from '../context/DataContext';
@@ -23,8 +23,7 @@ const Resolutions = () => {
     castResolutionVote,
     retractResolutionVote,
     getResolutionTally,
-    getMyResolutionVote
-  } = useData();
+    getMyResolutionVote, getViewCount: getSharedViewCount, trackView} = useData();
   const { voter, signIn, signOut, authError, isVotingAvailable, allowedVoteDomains: voteDomains } = useVoterAuth();
   const [voteError, setVoteError] = useState('');
   const [isVoting, setIsVoting] = useState(false);
@@ -204,26 +203,11 @@ const Resolutions = () => {
     }
   };
 
-  // View counts state (persisted in localStorage)
-  const [viewCounts, setViewCounts] = useState(() => {
-    const saved = localStorage.getItem('resolutionViewCounts');
-    return saved ? JSON.parse(saved) : {};
-  });
+  // Shared view counts, held in Firestore. These used to be per-device
+  // localStorage numbers, which meant everyone saw a different figure.
+  const getViewCount = (id) => getSharedViewCount('resolutions', id);
+  const incrementViewCount = (id) => trackView('resolutions', id);
 
-  useEffect(() => {
-    localStorage.setItem('resolutionViewCounts', JSON.stringify(viewCounts));
-  }, [viewCounts]);
-
-  const getViewCount = (id) => {
-    return viewCounts[`resolution-${id}`] || 0;
-  };
-
-  const incrementViewCount = (id) => {
-    setViewCounts(prev => ({
-      ...prev,
-      [`resolution-${id}`]: (prev[`resolution-${id}`] || 0) + 1
-    }));
-  };
 
   const openModal = (resolution) => {
     setSelectedResolution(resolution);
@@ -247,7 +231,9 @@ const Resolutions = () => {
     }
   };
 
-  useModalBehaviour(showAdminModal, () => setShowAdminModal(false));
+  // Handed to useModalBehaviour so Tab stays inside the dialog.
+  const adminModalRef = useRef(null);
+  useModalBehaviour(showAdminModal, () => setShowAdminModal(false), adminModalRef);
 
   return (
     <div className="resolutions-page">
@@ -572,7 +558,7 @@ const Resolutions = () => {
       {/* Admin Modal */}
       {showAdminModal && (
         <div className="admin-modal-overlay" onClick={() => setShowAdminModal(false)}>
-          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="admin-modal" ref={adminModalRef} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-header">
               <h3>{editItem ? 'Edit Resolution' : 'Add New Resolution'}</h3>
               <button className="admin-modal-close" onClick={() => setShowAdminModal(false)}>

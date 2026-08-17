@@ -24,7 +24,9 @@ import {
   FiMenu,
   FiInbox,
   FiMessageSquare,
-  FiSend
+  FiSend,
+  FiArchive,
+  FiClock
 } from 'react-icons/fi';
 import { AuthContext } from '../../App';
 import { useData } from '../../context/DataContext';
@@ -43,6 +45,9 @@ import ConstitutionByLaws from '../ConstitutionByLaws';
 import ResolutionVoters from './ResolutionVoters';
 import StudentSubmissions from './StudentSubmissions';
 import AlertSubscribers from './AlertSubscribers';
+import AcademicYearSettings from './AcademicYearSettings';
+import AnnouncementDrafts from './AnnouncementDrafts';
+import AuditLog from './AuditLog';
 import DocumentViewerModal from '../../components/DocumentViewerModal';
 import sscLogo from '../../assets/ssc_logo.svg';
 import './AdminDashboard.css';
@@ -271,6 +276,7 @@ const AdminDashboard = () => {
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: FiGrid },
     { id: 'announcements', label: 'Announcements', icon: FiBell },
+    { id: 'drafts', label: 'Drafts & Scheduled', icon: FiEdit2 },
     { id: 'events', label: 'Calendar Events', icon: FiCalendar },
     { id: 'resolutions', label: 'Resolutions', icon: FiFileText },
     { id: 'resolution-votes', label: 'Resolution Votes', icon: FiCheckSquare },
@@ -283,7 +289,9 @@ const AdminDashboard = () => {
     { id: 'requests', label: 'Request Letters', icon: FiMail },
     { id: 'tickets', label: 'Student Tickets', icon: FiInbox },
     { id: 'suggestions', label: 'Suggestion Box', icon: FiMessageSquare },
-    { id: 'subscribers', label: 'Alert Subscribers', icon: FiSend }
+    { id: 'subscribers', label: 'Alert Subscribers', icon: FiSend },
+    { id: 'academic-year', label: 'Academic Year', icon: FiArchive },
+    { id: 'audit-log', label: 'Activity Log', icon: FiClock }
   ];
 
   const renderDashboard = () => (
@@ -619,6 +627,8 @@ const AdminDashboard = () => {
         return renderDashboard();
       case 'announcements':
         return renderAnnouncementsManager();
+      case 'drafts':
+        return <AnnouncementDrafts />;
       case 'events':
         return renderEventsManager();
       case 'resolutions':
@@ -645,6 +655,10 @@ const AdminDashboard = () => {
         return <StudentSubmissions mode="suggestions" />;
       case 'subscribers':
         return <AlertSubscribers />;
+      case 'academic-year':
+        return <AcademicYearSettings />;
+      case 'audit-log':
+        return <AuditLog />;
       default:
         return renderDashboard();
     }

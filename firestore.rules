@@ -175,6 +175,67 @@ service cloud.firestore {
       allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
     }
 
+    // ---- view counts ------------------------------------------------------
+    //
+    // One document per item, holding a single number. Its own collection
+    // because content documents are admin-only writable and must stay that way
+    // — a counter students need to increment cannot live on them.
+    //
+    // The write is open (readers are not signed in) but tightly shaped: only
+    // these three fields, and the count may only ever move up by one. So the
+    // worst someone can do with a script is inflate a view number, which is the
+    // same thing they could do by reloading a page.
+    match /views/{viewId} {
+      allow read: if true;
+
+      allow create: if request.resource.data.count == 1
+        && request.resource.data.keys().hasOnly(['count', 'collectionName', 'documentId']);
+
+      allow update: if request.resource.data.count == resource.data.count + 1
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count']);
+
+      allow delete: if isSscAdmin();
+    }
+
+    // ---- audit log --------------------------------------------------------
+    //
+    // Append-only, on purpose: update and delete are denied to *everyone*,
+    // admins included. A log an admin can edit is not evidence of anything.
+    //
+    // The recorded uid is pinned to the caller's own, so nobody can write an
+    // entry in a colleague's name. What a client can still do is skip logging
+    // altogether — this is an accountability aid among officers, not a forensic
+    // trail. Only a Cloud Function triggered by the write itself would be that.
+    match /auditLog/{entryId} {
+      allow read: if isSscAdmin();
+      allow create: if isSscAdmin()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.action is string
+        && request.resource.data.collectionName is string;
+      allow update, delete: if false;
+    }
+
+    // ---- unpublished announcements --------------------------------------
+    //
+    // Drafts and scheduled posts. A separate collection rather than a flag on a
+    // public document: a flag can be read straight off the API however the UI
+    // chooses to hide it, whereas nothing here is readable without an admin
+    // account. Publishing copies the document into `announcements`.
+    match /announcementDrafts/{docId} {
+      allow read, write: if isSscAdmin();
+    }
+
+    // ---- board settings --------------------------------------------------
+    //
+    // One document holding which academic year the board presents as current.
+    // Deliberately a stored setting rather than something derived from the
+    // calendar: a council hands over on its own schedule, and deriving it would
+    // empty the board on the morning the new academic year technically begins.
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isSscAdmin();
+    }
+
     // ---- public content --------------------------------------------------
     //
     // World-readable, because that is the entire point of a transparency board.

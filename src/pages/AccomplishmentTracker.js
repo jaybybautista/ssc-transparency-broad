@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useContext , useRef } from 'react';
 import { FiAward, FiCheckCircle, FiClock, FiCalendar, FiFilter, FiEye, FiX, FiExternalLink, FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
 import { FaFacebookF } from 'react-icons/fa';
 import { AuthContext } from '../App';
@@ -15,7 +15,7 @@ import './AccomplishmentTracker.css';
 const AccomplishmentTracker = () => {
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
-  const { accomplishments, createAccomplishment, updateAccomplishment, deleteAccomplishment } = useData();
+  const { accomplishments, createAccomplishment, updateAccomplishment, deleteAccomplishment, getViewCount: getSharedViewCount, trackView} = useData();
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
@@ -80,26 +80,11 @@ const AccomplishmentTracker = () => {
     }
   };
 
-  // View counts state (persisted in localStorage)
-  const [viewCounts, setViewCounts] = useState(() => {
-    const saved = localStorage.getItem('accomplishmentViewCounts');
-    return saved ? JSON.parse(saved) : {};
-  });
+  // Shared view counts, held in Firestore. These used to be per-device
+  // localStorage numbers, which meant everyone saw a different figure.
+  const getViewCount = (id) => getSharedViewCount('accomplishments', id);
+  const incrementViewCount = (id) => trackView('accomplishments', id);
 
-  useEffect(() => {
-    localStorage.setItem('accomplishmentViewCounts', JSON.stringify(viewCounts));
-  }, [viewCounts]);
-
-  const getViewCount = (id) => {
-    return viewCounts[`accomplishment-${id}`] || 0;
-  };
-
-  const incrementViewCount = (id) => {
-    setViewCounts(prev => ({
-      ...prev,
-      [`accomplishment-${id}`]: (prev[`accomplishment-${id}`] || 0) + 1
-    }));
-  };
 
   const openModal = (item) => {
     setSelectedItem(item);
@@ -146,7 +131,9 @@ const AccomplishmentTracker = () => {
     upcoming: accomplishments.filter(a => a.status === 'Upcoming').length
   };
 
-  useModalBehaviour(showAdminModal, () => setShowAdminModal(false));
+  // Handed to useModalBehaviour so Tab stays inside the dialog.
+  const adminModalRef = useRef(null);
+  useModalBehaviour(showAdminModal, () => setShowAdminModal(false), adminModalRef);
 
   return (
     <div className="accomplishment-page">
@@ -340,7 +327,7 @@ const AccomplishmentTracker = () => {
       {/* Admin Modal */}
       {showAdminModal && (
         <div className="admin-modal-overlay" onClick={() => setShowAdminModal(false)}>
-          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="admin-modal" ref={adminModalRef} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-header">
               <h3>{editItem ? 'Edit Accomplishment' : 'Add New Accomplishment'}</h3>
               <button className="admin-modal-close" onClick={() => setShowAdminModal(false)}>

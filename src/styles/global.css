@@ -1451,3 +1451,71 @@ ul, ol {
 :root[data-theme='dark'] .request-info h3 { color: #f4a8ce; }
 :root[data-theme='dark'] .request-info p { color: #ee92c0; }
 :root[data-theme='dark'] .request-info .info-icon { color: #ee92c0; }
+
+/* ========================================================================
+   ACCESSIBILITY
+======================================================================== */
+
+/* Keyboard users land here first and can jump past the navigation. Visible
+   only while focused, so it costs sighted mouse users nothing. */
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -100px;
+  z-index: 2000;
+  padding: 0.75rem 1.25rem;
+  background: var(--surface);
+  color: var(--accent-text);
+  border: 2px solid var(--primary-500);
+  border-radius: 0 0 10px 10px;
+  font-weight: 600;
+  transition: top var(--transition-fast);
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+#main-content:focus {
+  outline: none;
+}
+
+/* A visible focus ring everywhere the browser's default has been styled away.
+   :focus-visible rather than :focus, so it appears for keyboard navigation
+   without ringing every button a mouse touches. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible,
+[contenteditable="true"]:focus-visible {
+  outline: 3px solid var(--primary-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Visually hidden but still announced. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Honour the system setting for people who get motion sickness. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

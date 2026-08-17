@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { FiAlertTriangle, FiBell, FiCheck, FiInfo, FiMail, FiX } from 'react-icons/fi';
 import { useData, isValidEmail } from '../context/DataContext';
 import useModalBehaviour from './useModalBehaviour';
@@ -24,7 +24,8 @@ const AlertSubscribe = ({ onClose }) => {
   const [emailState, setEmailState] = useState('idle'); // idle | saving | saved | removed
   const [emailError, setEmailError] = useState('');
 
-  useModalBehaviour(true, onClose);
+  const dialogRef = useRef(null);
+  useModalBehaviour(true, onClose, dialogRef);
 
   useEffect(() => {
     saveAlertPrefs(prefs);
@@ -84,7 +85,14 @@ const AlertSubscribe = ({ onClose }) => {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content alert-subscribe-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-content alert-subscribe-modal"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Email alerts"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="modal-header">
           <h3><FiBell /> Email alerts</h3>
           <button className="close-btn" onClick={onClose} aria-label="Close">
