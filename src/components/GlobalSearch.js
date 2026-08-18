@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   FiSearch,
@@ -80,7 +81,7 @@ const GlobalSearch = ({ onClose }) => {
 
   const results = useMemo(() => {
     const needle = term.trim().toLowerCase();
-    if (needle.length < 2) return [];
+    if (!needle) return [];
 
     const found = [];
     SECTIONS.forEach((section) => {
@@ -119,6 +120,14 @@ const GlobalSearch = ({ onClose }) => {
   };
 
   const onKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      // A `type="search"` input swallows the first Escape to clear itself in
+      // some browsers, so close from here too rather than relying only on the
+      // document-level handler.
+      e.preventDefault();
+      onClose();
+      return;
+    }
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setActiveIndex((i) => Math.min(i + 1, results.length - 1));
@@ -133,7 +142,17 @@ const GlobalSearch = ({ onClose }) => {
 
   const somethingUnloaded = Object.values(hasMore || {}).some(Boolean);
 
-  return (
+  /*
+   * Rendered into <body>, NOT where this component sits in the tree.
+   *
+   * The trigger lives inside the navbar, and the navbar has backdrop-filter.
+   * That makes it the containing block for any position:fixed descendant, so
+   * `inset: 0` resolved to the 70px-tall header instead of the viewport: the
+   * overlay covered only the header, and the panel — with its close button —
+   * was laid out at y = -67px, off the top of the screen. There was no visible
+   * way out of the search. A portal sidesteps the whole issue.
+   */
+  return createPortal(
     <div className="modal-overlay global-search-overlay" onClick={onClose}>
       <div
         className="global-search"
@@ -161,12 +180,12 @@ const GlobalSearch = ({ onClose }) => {
         </div>
 
         <div className="gs-body" id="gs-results" role="listbox">
-          {term.trim().length < 2 ? (
+          {!term.trim() ? (
             <div className="gs-hint">
-              <p>Type at least two letters.</p>
+              <p>Start typing to search the board.</p>
               <p className="gs-hint-small">
-                Searching {formatAcademicYear(selectedYear)}. Use <kbd>↑</kbd> <kbd>↓</kbd> to move
-                and <kbd>Enter</kbd> to open.
+                Searching {formatAcademicYear(selectedYear)}. Use <kbd>↑</kbd> <kbd>↓</kbd> to move,
+                <kbd>Enter</kbd> to open, <kbd>Esc</kbd> to close.
               </p>
             </div>
           ) : !results.length ? (
@@ -209,7 +228,8 @@ const GlobalSearch = ({ onClose }) => {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

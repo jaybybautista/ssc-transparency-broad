@@ -1,0 +1,174 @@
+/* Both selectors, so this beats the base .modal-overlay padding on specificity
+   rather than on source order — otherwise the sheet floats above the bottom
+   edge instead of sitting on it. */
+.modal-overlay.year-wheel-overlay {
+  align-items: flex-end;
+  padding: 0;
+}
+
+.year-wheel {
+  width: min(420px, 100%);
+  margin: 0 auto 0;
+  padding: 1.25rem 1.25rem 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--gray-200);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -12px 40px rgba(15, 23, 42, 0.3);
+  animation: yw-rise 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes yw-rise {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.yw-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-bottom: 0.75rem;
+}
+
+.yw-head > svg {
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+  font-size: 1.05rem;
+  color: var(--accent-text);
+}
+
+.yw-head h3 {
+  font-size: 1rem;
+  color: var(--gray-900);
+  margin: 0 0 0.15rem;
+}
+
+.yw-head p {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--gray-500);
+}
+
+/* ---- the wheel ---- */
+.yw-wheel {
+  position: relative;
+  outline: none;
+}
+
+.yw-wheel:focus-visible {
+  outline: 3px solid var(--primary-500);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+.yw-highlight {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--gray-100);
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.yw-list {
+  height: 100%;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  /* Fades the ends, so entries appear to roll away over a curve. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+}
+
+.yw-list::-webkit-scrollbar {
+  display: none;
+}
+
+.yw-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  scroll-snap-align: center;
+  border: none;
+  background: none;
+  font-family: var(--font-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  cursor: pointer;
+  transition: color var(--transition-fast), opacity var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.yw-item.active {
+  color: var(--gray-900);
+  font-size: 1.2rem;
+}
+
+.yw-tag {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.12rem 0.38rem;
+  border-radius: 999px;
+  background: var(--success-soft-alt);
+  color: var(--success-strong-alt);
+}
+
+/* ---- actions ---- */
+.yw-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.yw-cancel,
+.yw-confirm {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.yw-cancel {
+  background: var(--gray-100);
+  color: var(--gray-700);
+}
+
+.yw-confirm {
+  background: var(--bg-gradient);
+  color: #fff;
+}
+
+/* Centred like a normal dialog once there is room for it. */
+@media (min-width: 640px) {
+  .modal-overlay.year-wheel-overlay {
+    align-items: center;
+    padding: 2rem;
+  }
+
+  .year-wheel {
+    border-radius: 20px;
+    box-shadow: var(--shadow-2xl);
+    animation: yw-fade 0.18s ease-out;
+  }
+
+  @keyframes yw-fade {
+    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+}

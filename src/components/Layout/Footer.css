@@ -251,3 +251,27 @@
     transform: none;
   }
 }
+
+/* The academic year is the (unadvertised) way into the year wheel. Styled to
+   look like the surrounding text, with only a hover hint that it is live. */
+.footer-year-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-bottom: 1px dotted transparent;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.footer-year-btn:hover {
+  color: #fff;
+  border-bottom-color: rgba(255, 255, 255, 0.5);
+}
+
+.footer-year-btn:focus-visible {
+  outline: 2px solid var(--primary-400);
+  outline-offset: 3px;
+  border-radius: 3px;
+}

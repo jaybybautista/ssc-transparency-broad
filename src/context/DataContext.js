@@ -306,6 +306,12 @@ export const voteDocId = (resolutionId, uid) => `${resolutionId}__${uid}`;
 export const PAGE_SIZE = 60;
 
 /**
+ * How old content must be before its academic year is treated as the board's
+ * current one. See the settling-window note in the discovery effect below.
+ */
+const SETTLED_DAYS = 45;
+
+/**
  * The listener table.
  *
  * `orderField` moves the sort to the server so `limit` returns the *newest*
@@ -446,7 +452,24 @@ export const DataProvider = ({ children }) => {
    *
    * Falls back to the derived year until an admin sets it.
    */
-  const [activeYear, setActiveYear] = useState(currentAcademicYear);
+  const [storedActiveYear, setStoredActiveYear] = useState('');
+
+  /** Academic year of the newest content that actually exists. */
+  const [latestContentYear, setLatestContentYear] = useState('');
+
+  /**
+   * The year the board opens on.
+   *
+   * Precedence, and the reasoning for it:
+   *   1. What an admin has declared in settings/board — always wins.
+   *   2. Otherwise the year of the newest content that actually exists. This is
+   *      the important one. Falling back to the calendar meant that on 1 August
+   *      the board jumped to a council that had not started yet and showed an
+   *      empty year, with the sitting council's work filed under "archive".
+   *      Content is a far better signal of whose term is running than the date.
+   *   3. Only if there is no content at all, the calendar.
+   */
+  const activeYear = storedActiveYear || latestContentYear || currentAcademicYear();
 
   /** Set once the visitor picks a year, so the stored setting stops overriding. */
   const hasChosenYearRef = useRef(false);
@@ -583,23 +606,81 @@ export const DataProvider = ({ children }) => {
 
     (async () => {
       const dated = PUBLIC_COLLECTIONS.filter((config) => config.yearScoped);
-      const oldest = await Promise.all(
-        dated.map(async (config) => {
-          try {
-            const snapshot = await getDocs(
-              query(collection(db, config.key), orderBy(config.orderField, 'asc'), limit(1))
-            );
-            return snapshot.docs[0]?.data()?.[config.orderField] || '';
-          } catch (error) {
-            return '';
-          }
-        })
-      );
+
+      const edge = async (config, direction) => {
+        try {
+          const snapshot = await getDocs(
+            query(collection(db, config.key), orderBy(config.orderField, direction), limit(1))
+          );
+          return snapshot.docs[0]?.data()?.[config.orderField] || '';
+        } catch (error) {
+          return '';
+        }
+      };
+
+      // Newest document dated on or before the settling cutoff. A range and an
+      // order on the same field, so no composite index is needed.
+      const settledEdge = async (config, before) => {
+        try {
+          const snapshot = await getDocs(
+            query(
+              collection(db, config.key),
+              where(config.orderField, '<=', before),
+              orderBy(config.orderField, 'desc'),
+              limit(1)
+            )
+          );
+          return snapshot.docs[0]?.data()?.[config.orderField] || '';
+        } catch (error) {
+          return '';
+        }
+      };
+
+      const settleBefore = new Date();
+      settleBefore.setDate(settleBefore.getDate() - SETTLED_DAYS);
+      const settleBeforeIso = settleBefore.toISOString().split('T')[0];
+
+      const [oldest, newest, settled] = await Promise.all([
+        Promise.all(dated.map((config) => edge(config, 'asc'))),
+        Promise.all(dated.map((config) => edge(config, 'desc'))),
+        Promise.all(dated.map((config) => settledEdge(config, settleBeforeIso)))
+      ]);
+
+      if (cancelled) return;
 
       const earliestDate = oldest.filter(Boolean).sort()[0];
-      if (!cancelled && earliestDate) {
+      if (earliestDate) {
         const year = academicYearOf(earliestDate);
         if (year) setEarliestYear(year);
+      }
+
+      /*
+       * The newest content that has had time to settle, not simply the newest.
+       *
+       * A term does not take over the board the day its calendar year turns.
+       * The council that posted on 17 August 2026 was the 2025-2026 council —
+       * their term had not ended — but a plain "newest post" rule filed those
+       * posts under 2026-2027 and pushed the sitting council into the archive,
+       * with the incoming year showing almost nothing.
+       *
+       * Looking back past a settling window fixes that: a new academic year
+       * only becomes the default once it has content that is genuinely a few
+       * weeks old, by which point the term really is running. An admin
+       * declaring the year in settings/board overrides this entirely.
+       */
+      const settledDate = settled.filter(Boolean).sort().pop();
+      if (settledDate) {
+        const year = academicYearOf(settledDate);
+        if (year) setLatestContentYear(year);
+      } else {
+        // Nothing older than the window at all: fall back to the newest thing
+        // that exists rather than to the calendar.
+        const today = new Date().toISOString().split('T')[0];
+        const anyDate = newest.filter(Boolean).filter((date) => date <= today).sort().pop();
+        if (anyDate) {
+          const year = academicYearOf(anyDate);
+          if (year) setLatestContentYear(year);
+        }
       }
     })();
 
@@ -615,13 +696,7 @@ export const DataProvider = ({ children }) => {
     return onSnapshot(
       doc(db, 'settings', 'board'),
       (snapshot) => {
-        const stored = snapshot.exists() ? snapshot.data()?.activeAcademicYear : '';
-        const resolved = stored || currentAcademicYear();
-        setActiveYear(resolved);
-        // Only adopt the setting while the visitor has not chosen a year
-        // themselves, so a deliberate switch to the archive is not undone a
-        // moment later when this snapshot arrives.
-        if (!hasChosenYearRef.current) setSelectedYear(resolved);
+        setStoredActiveYear((snapshot.exists() && snapshot.data()?.activeAcademicYear) || '');
       },
       () => {
         /* No settings document yet: the derived year stands. */
@@ -629,11 +704,25 @@ export const DataProvider = ({ children }) => {
     );
   }, []);
 
+  /*
+   * Keep the shown year on the active one until the visitor chooses otherwise.
+   * Both inputs to activeYear arrive asynchronously, so this reacts to the
+   * resolved value rather than to whichever snapshot happened to land first.
+   */
+  useEffect(() => {
+    if (!hasChosenYearRef.current) setSelectedYear(activeYear);
+  }, [activeYear]);
+
   // Shared view counts. Public, like the tallies they resemble.
   useEffect(() => subscribeToViewCounts(setViewCounts), []);
 
   /** Newest first, current year at the top. */
-  const availableYears = useMemo(() => academicYearRange(earliestYear), [earliestYear]);
+  const availableYears = useMemo(
+    // Capped at the active year: a term that has not begun would otherwise be
+    // offered as a destination with nothing in it.
+    () => academicYearRange(earliestYear, activeYear),
+    [earliestYear, activeYear]
+  );
 
   /** Fetch another page of one collection. */
   const loadMore = (collectionKey) => {
@@ -1190,10 +1279,10 @@ export const DataProvider = ({ children }) => {
    * Officers for the selected year. A record with no `academicYear` predates the
    * field and is shown under the current year rather than disappearing.
    */
-  const officersForYear = useMemo(() => {
-    const current = currentAcademicYear();
-    return officers.filter((officer) => (officer.academicYear || current) === selectedYear);
-  }, [officers, selectedYear]);
+  const officersForYear = useMemo(
+    () => officers.filter((officer) => (officer.academicYear || activeYear) === selectedYear),
+    [officers, selectedYear, activeYear]
+  );
 
   const value = useMemo(
     () => ({

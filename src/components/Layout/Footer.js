@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiMail, FiMapPin, FiPhone } from 'react-icons/fi';
 import { FaFacebookF } from 'react-icons/fa';
@@ -8,6 +8,7 @@ import psuLogo from '../../assets/psu_logo.svg';
 import { useTheme } from '../../context/ThemeContext';
 import { useData } from '../../context/DataContext';
 import { formatAcademicYear } from '../../lib/academicYear';
+import YearWheel from '../YearWheel';
 import './Footer.css';
 
 const Footer = () => {
@@ -16,6 +17,7 @@ const Footer = () => {
   // Was hardcoded "A.Y. 2025-2026", which would have quietly gone stale the
   // moment this council handed over.
   const { selectedYear } = useData();
+  const [yearPickerOpen, setYearPickerOpen] = useState(false);
 
   return (
     <footer className="footer">
@@ -90,10 +92,20 @@ const Footer = () => {
       <div className="footer-bottom">
         <div className="container">
           <p>&copy; {currentYear} PSU-UCC Supreme Student Council. All rights reserved.</p>
-          {/* The heart is the theme switch — an easter egg rather than a
-              labelled control, so it carries its own accessible name. */}
+          {/* Two easter eggs share this line: the academic year opens the year
+              wheel, the heart switches the theme. Neither is advertised, and
+              both carry their own accessible name so they are still reachable. */}
           <p>
-            {formatAcademicYear(selectedYear)} | Developed with{' '}
+            <button
+              type="button"
+              className="footer-year-btn"
+              onClick={() => setYearPickerOpen(true)}
+              title="Browse another academic year"
+              aria-label={`Browse another academic year — currently ${formatAcademicYear(selectedYear)}`}
+            >
+              {formatAcademicYear(selectedYear)}
+            </button>
+            {' '}| Developed with{' '}
             <button
               type="button"
               className={`theme-heart ${isDark ? 'is-dark' : ''}`}
@@ -106,6 +118,7 @@ const Footer = () => {
             </button>{' '}
             for Student Welfare
           </p>
+          {yearPickerOpen && <YearWheel onClose={() => setYearPickerOpen(false)} />}
         </div>
       </div>
     </footer>

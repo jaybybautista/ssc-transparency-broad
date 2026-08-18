@@ -60,15 +60,18 @@ export const academicYearBounds = (academicYear) => {
 };
 
 /**
- * Every academic year from `earliest` up to the current one, newest first.
- * Used to build the year switcher.
+ * Every academic year from `earliest` up to `latest`, newest first.
+ *
+ * `latest` defaults to the calendar's year but callers should pass the board's
+ * *active* year instead: offering a term that has not started yet gives students
+ * a year to switch into that is empty by definition.
  */
-export const academicYearRange = (earliest) => {
-  const current = currentAcademicYear();
-  const firstYear = Number(String(earliest || current).split('-')[0]);
-  const lastYear = Number(current.split('-')[0]);
+export const academicYearRange = (earliest, latest) => {
+  const top = latest || currentAcademicYear();
+  const firstYear = Number(String(earliest || top).split('-')[0]);
+  const lastYear = Number(String(top).split('-')[0]);
 
-  if (!firstYear || firstYear > lastYear) return [current];
+  if (!firstYear || !lastYear || firstYear > lastYear) return [top];
 
   const years = [];
   for (let year = lastYear; year >= firstYear; year -= 1) {

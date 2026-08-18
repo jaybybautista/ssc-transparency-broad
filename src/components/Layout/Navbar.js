@@ -2,7 +2,6 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FiMenu, FiChevronDown, FiUser, FiMail, FiArrowLeft } from 'react-icons/fi';
 import { AuthContext } from '../../App';
-import AcademicYearPicker from '../AcademicYearPicker';
 import { GlobalSearchButton } from '../GlobalSearch';
 import LanguageToggle from '../LanguageToggle';
 import { useLanguage } from '../../context/LanguageContext';
@@ -99,13 +98,13 @@ const Navbar = ({ setSidebarOpen }) => {
         </ul>
 
         <div className="navbar-actions">
-          {/* Search, language and year are one segmented control rather than
-              three separate pills — three loose controls of slightly different
-              heights beside two buttons is what made this bar look cluttered. */}
+          {/* Search and language are one segmented control rather than two
+              loose pills of slightly different heights. The year switcher is
+              deliberately not here — it lives behind the academic year in the
+              footer, so the bar stays about what students came for. */}
           <div className="navbar-tools">
             <GlobalSearchButton />
             <LanguageToggle />
-            <AcademicYearPicker />
           </div>
 
           <Link to="/ssc/contact" className="connect-btn">
