@@ -10,11 +10,13 @@ import AdminSearchBar, { matchesQuery } from '../components/AdminSearchBar';
 import RichContent from '../components/RichContent';
 import RichTextEditor from '../components/RichTextEditor';
 import { richTextToPlain } from '../components/richText';
+import { useLanguage } from '../context/LanguageContext';
 import './ConstitutionByLaws.css';
 
 const CATEGORIES = ['Constitution', 'By-Laws', 'Amendment', 'Implementing Rules'];
 
 const ConstitutionByLaws = () => {
+  const { t } = useLanguage();
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
   const { constitutionDocs, createConstitutionDoc, updateConstitutionDoc, deleteConstitutionDoc } = useData();
@@ -136,8 +138,8 @@ const ConstitutionByLaws = () => {
     <div className="constitution-page">
       <div className="page-header">
         <div className="page-header-content container">
-          <h1>Constitution &amp; By-Laws</h1>
-          <p>The governing documents of the Supreme Student Council — the constitution, by-laws, and their amendments.</p>
+          <h1>{t('con.title')}</h1>
+          <p>{t('con.subtitle')}</p>
           {isAdmin && (
             <button className="admin-add-btn" onClick={handleAdd}>
               <FiPlus /> Add Document
@@ -150,7 +152,7 @@ const ConstitutionByLaws = () => {
         <div className="constitution-info">
           <FiBookOpen className="info-icon" />
           <div>
-            <h3>About these documents</h3>
+            <h3>{t('con.about')}</h3>
             <p>
               These are the official governing documents of the SSC. They define the council's structure,
               the duties of every officer, and the rules that govern elections and proceedings. Tap any
@@ -172,7 +174,7 @@ const ConstitutionByLaws = () => {
         {!constitutionDocs.length ? (
           <div className="constitution-empty">
             <FiBookOpen />
-            <h3>No documents yet</h3>
+            <h3>{t('con.none')}</h3>
             <p>
               {isAdmin
                 ? 'Use “Add Document” above to upload the constitution or by-laws.'

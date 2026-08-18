@@ -10,9 +10,11 @@ import DocumentViewerModal from '../components/DocumentViewerModal';
 import ImageCarousel from '../components/ImageCarousel';
 import RichContent from '../components/RichContent';
 import LoadMore from '../components/LoadMore';
+import { useLanguage } from '../context/LanguageContext';
 import './Resolutions.css';
 
 const Resolutions = () => {
+  const { t } = useLanguage();
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
   const {
@@ -239,8 +241,8 @@ const Resolutions = () => {
     <div className="resolutions-page">
       <div className="page-header">
         <div className="page-header-content container">
-          <h1>Resolutions</h1>
-          <p>Official resolutions passed by the Supreme Student Council addressing student concerns and initiatives.</p>
+          <h1>{t('res.title')}</h1>
+          <p>{t('res.subtitle')}</p>
           {isAdmin && (
             <button className="admin-add-btn" onClick={handleAdd}>
               <FiPlus /> Add Resolution
@@ -253,7 +255,7 @@ const Resolutions = () => {
         <div className="resolutions-info">
           <FiFileText className="info-icon" />
           <div>
-            <h3>About Resolutions</h3>
+            <h3>{t('res.about')}</h3>
             <p>Resolutions are formal expressions of the opinion or will of the Student Supreme Council. Each resolution undergoes deliberation and voting before being passed.</p>
           </div>
         </div>
@@ -291,7 +293,7 @@ const Resolutions = () => {
                 {resolution.fileUrl && (
                   <div className="resolution-file-badge" onClick={(e) => e.stopPropagation()}>
                     <FiFileText />
-                    <span>{isAdmin && resolution.fileName ? resolution.fileName : 'Attached Document'}</span>
+                    <span>{isAdmin && resolution.fileName ? resolution.fileName : t('common.attachedDocument')}</span>
                   </div>
                 )}
                 
@@ -318,7 +320,7 @@ const Resolutions = () => {
                 </div>
 
                 <div className="resolution-actions-row">
-                  <button className="see-more-btn" onClick={(e) => { e.stopPropagation(); openModal(resolution); }}>See More</button>
+                  <button className="see-more-btn" onClick={(e) => { e.stopPropagation(); openModal(resolution); }}>{t('common.seeMore')}</button>
                   {resolution.fileUrl && (
                     <>
                       <button
@@ -403,10 +405,10 @@ const Resolutions = () => {
               <RichContent html={selectedResolution.description} />
               {selectedResolution.fileUrl && (
                 <div className="modal-section" style={{ marginTop: '1.25rem' }}>
-                  <h4>Attached Document</h4>
+                  <h4>{t('common.attachedDocument')}</h4>
                   <div className="modal-file-download">
                     <FiFileText className="file-icon" />
-                    <span className="file-name">{isAdmin && selectedResolution.fileName ? selectedResolution.fileName : 'Attached Document'}</span>
+                    <span className="file-name">{isAdmin && selectedResolution.fileName ? selectedResolution.fileName : t('common.attachedDocument')}</span>
                     <button
                       type="button"
                       className="btn btn-outline"
@@ -435,7 +437,7 @@ const Resolutions = () => {
 
                 return (
                   <div className="modal-voting">
-                    <h4>Voting Results</h4>
+                    <h4>{t('res.votingResults')}</h4>
                     <div className="voting-results-modal">
                       <div className="vote-item for">
                         <FiThumbsUp />
@@ -471,7 +473,7 @@ const Resolutions = () => {
                           )}
                         </p>
                         <button type="button" className="btn btn-primary google-signin-btn" onClick={signIn}>
-                          <FiLogIn /> Sign in with Google to vote
+                          <FiLogIn /> {t('res.signInToVote')}
                         </button>
                       </div>
                     ) : (

@@ -1,9 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FiTarget, FiFileText, FiClipboard, FiBook, FiAward, FiSend, FiArrowRight, FiBookOpen } from 'react-icons/fi';
+import { useLanguage } from '../context/LanguageContext';
 import './SSC.css';
 
 const SSC = () => {
+  const { t } = useLanguage();
   const sections = [
     {
       title: 'About SSC',
@@ -68,7 +70,7 @@ const SSC = () => {
       <div className="container section">
         <div className="ssc-intro">
           <div className="intro-content">
-            <h2>Welcome to SSC</h2>
+            <h2>{t('ssc.welcome')}</h2>
             <p>
               The Student Supreme Council (SSC) is the highest governing student body of our institution. 
               We serve as the voice of the students, advocating for your rights and welfare while promoting 
@@ -79,13 +81,13 @@ const SSC = () => {
               and utilize our services.
             </p>
             <Link to="/ssc/about" className="btn btn-primary">
-              Learn About SSC <FiArrowRight />
+              {t('ssc.learnAbout')} <FiArrowRight />
             </Link>
           </div>
         </div>
 
         <div className="ssc-sections">
-          <h2 className="sections-title">Explore SSC</h2>
+          <h2 className="sections-title">{t('ssc.explore')}</h2>
           <div className="sections-grid">
             {sections.map((section, index) => (
               <Link 
@@ -100,7 +102,7 @@ const SSC = () => {
                 <h3>{section.title}</h3>
                 <p>{section.description}</p>
                 <span className="section-link">
-                  Explore <FiArrowRight />
+                  {t('ssc.exploreShort')} <FiArrowRight />
                 </span>
               </Link>
             ))}

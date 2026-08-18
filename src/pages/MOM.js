@@ -14,9 +14,11 @@ import AuthorByline from '../components/AuthorByline';
 import AuthorPicker, { EMPTY_AUTHOR } from '../components/AuthorPicker';
 import { richTextToPlain } from '../components/richText';
 import LoadMore from '../components/LoadMore';
+import { useLanguage } from '../context/LanguageContext';
 import './MOM.css';
 
 const MOM = () => {
+  const { t } = useLanguage();
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
   const { meetings, createMeeting, updateMeeting, deleteMeeting, getViewCount: getSharedViewCount, trackView} = useData();
@@ -222,8 +224,8 @@ const MOM = () => {
     <div className="mom-page">
       <div className="page-header">
         <div className="page-header-content container">
-          <h1>Minutes of Meeting</h1>
-          <p>Official records of Student Supreme Council meetings, documenting discussions, decisions, and action items.</p>
+          <h1>{t('mom.title')}</h1>
+          <p>{t('mom.subtitle')}</p>
           {isAdmin && (
             <button className="admin-add-btn" onClick={handleAdd}>
               <FiPlus /> Add Meeting Record
@@ -236,7 +238,7 @@ const MOM = () => {
         <div className="mom-info">
           <FiClipboard className="info-icon" />
           <div>
-            <h3>About Minutes of Meeting</h3>
+            <h3>{t('mom.about')}</h3>
             <p>Minutes of Meeting (M.O.M) serve as the official record of SSC council meetings. They document attendance, discussions, decisions made, and tasks assigned during each meeting.</p>
           </div>
         </div>
@@ -313,13 +315,13 @@ const MOM = () => {
                 {meeting.fileUrl && (
                   <div className="mom-file-badge" onClick={(e) => e.stopPropagation()}>
                     <FiFileText />
-                    <span>{isAdmin && meeting.fileName ? meeting.fileName : 'Attached Document'}</span>
+                    <span>{isAdmin && meeting.fileName ? meeting.fileName : t('common.attachedDocument')}</span>
                   </div>
                 )}
 
                 <div className="mom-actions">
                   <button className="see-more-btn">
-                    <FiFileText /> See More
+                    <FiFileText /> {t('common.seeMore')}
                   </button>
                   {meeting.fileUrl && (
                     <>
@@ -437,10 +439,10 @@ const MOM = () => {
                 </div>
               {selectedMeeting.fileUrl && (
                 <div className="modal-section">
-                  <h4>Attached Document</h4>
+                  <h4>{t('common.attachedDocument')}</h4>
                   <div className="modal-file-download">
                     <FiFileText className="file-icon" />
-                    <span className="file-name">{isAdmin && selectedMeeting.fileName ? selectedMeeting.fileName : 'Attached Document'}</span>
+                    <span className="file-name">{isAdmin && selectedMeeting.fileName ? selectedMeeting.fileName : t('common.attachedDocument')}</span>
                     <button
                       type="button"
                       className="btn btn-outline"

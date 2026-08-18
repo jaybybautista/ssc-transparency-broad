@@ -12,9 +12,11 @@ import RichTextEditor from '../components/RichTextEditor';
 import { richTextToPlain } from '../components/richText';
 import { AlertSubscribeButton } from '../components/AlertSubscribe';
 import LoadMore from '../components/LoadMore';
+import { useLanguage } from '../context/LanguageContext';
 import './MemorandumOrders.css';
 
 const MemorandumOrders = () => {
+  const { t } = useLanguage();
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
   const { memorandums: memos, createMemorandum, updateMemorandum, deleteMemorandum } = useData();
@@ -142,10 +144,10 @@ const MemorandumOrders = () => {
     <div className="memorandum-page">
       <div className="page-header">
         <div className="page-header-content container">
-          <h1>Memorandum Orders</h1>
-          <p>Official directives, policies, and guidelines issued by the administration. Stay compliant and informed with the latest memorandums.</p>
+          <h1>{t('memo.title')}</h1>
+          <p>{t('memo.subtitle')}</p>
           <div className="page-header-actions">
-            {!isAdmin && <AlertSubscribeButton label="Notify me of new memoranda" />}
+            {!isAdmin && <AlertSubscribeButton label={t('memo.notifyMe')} />}
             {isAdmin && (
               <button className="admin-add-btn" onClick={handleAdd}>
                 <FiPlus /> Add Memorandum
@@ -159,7 +161,7 @@ const MemorandumOrders = () => {
         <div className="memo-info-banner">
           <FiFileText className="info-icon" />
           <div>
-            <h3>About Memorandum Orders</h3>
+            <h3>{t('memo.about')}</h3>
             <p>Memorandum orders are official documents containing directives, policies, and guidelines that all students must follow. Please read and understand each memorandum carefully.</p>
           </div>
         </div>
@@ -227,7 +229,7 @@ const MemorandumOrders = () => {
                   }}
                 >
                   <FiDownload />
-                  <span>Download PDF</span>
+                  <span>{t('memo.downloadPdf')}</span>
                 </button>
                 {isAdmin && (
                   <div className="admin-actions">
@@ -435,7 +437,7 @@ const MemorandumOrders = () => {
                       />
                     </>
                   ) : (
-                    <p className="memo-doc-empty">No document file has been attached to this memorandum yet.</p>
+                    <p className="memo-doc-empty">{t('memo.noFile')}</p>
                   )}
                 </div>
               </div>

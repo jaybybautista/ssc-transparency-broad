@@ -19,12 +19,15 @@
 .sidebar {
   position: fixed;
   top: 0;
-  left: 0;
+  /* Anchored right, because the button that opens it is on the right. Tapping
+     a control on one edge and having the panel fly in from the opposite one
+     leaves you looking at the wrong side of the screen. */
+  right: 0;
   width: var(--sidebar-width);
   height: 100vh;
   background: var(--surface);
   z-index: 1200;
-  transform: translateX(-100%);
+  transform: translateX(100%);
   transition: transform var(--transition-slow);
   display: flex;
   flex-direction: column;

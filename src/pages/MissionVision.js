@@ -1,15 +1,17 @@
 import React from 'react';
 import { FiTarget, FiHeart, FiStar, FiCheckCircle } from 'react-icons/fi';
 import { missionVision } from '../data/sampleData';
+import { useLanguage } from '../context/LanguageContext';
 import './MissionVision.css';
 
 const MissionVision = () => {
+  const { t } = useLanguage();
   return (
     <div className="mission-vision-page">
       <div className="page-header">
         <div className="page-header-content container">
-          <h1>Mission & Vision</h1>
-          <p>Guiding principles that drive our commitment to serve the student body with excellence and integrity.</p>
+          <h1>{t('mv.title')}</h1>
+          <p>{t('mv.subtitle')}</p>
         </div>
       </div>
 
@@ -20,7 +22,7 @@ const MissionVision = () => {
             <div className="mv-icon">
               <FiTarget />
             </div>
-            <h2>Our Vision</h2>
+            <h2>{t('about.vision')}</h2>
             <p>{missionVision.vision}</p>
           </div>
           
@@ -28,16 +30,16 @@ const MissionVision = () => {
             <div className="mv-icon">
               <FiStar />
             </div>
-            <h2>Our Mission</h2>
+            <h2>{t('about.mission')}</h2>
             <p>{missionVision.mission}</p>
           </div>
         </div>
 
-        {/* Core Values */}
+        {/* {t('about.values')} */}
         <section className="core-values-section">
           <h2 className="section-title">
             <FiHeart className="title-icon" />
-            Core Values
+            {t('about.values')}
           </h2>
           <div className="values-grid">
             {missionVision.coreValues.map((value, index) => (
@@ -53,7 +55,7 @@ const MissionVision = () => {
         <section className="goals-section">
           <h2 className="section-title">
             <FiCheckCircle className="title-icon" />
-            Our Goals
+            {t('about.goals')}
           </h2>
           <div className="goals-list">
             {missionVision.goals.map((goal, index) => (
@@ -67,7 +69,7 @@ const MissionVision = () => {
 
         {/* Commitment Banner */}
         <div className="commitment-banner">
-          <h3>Our Commitment</h3>
+          <h3>{t('about.commitment')}</h3>
           <p>
             We pledge to uphold these values and work tirelessly toward achieving our goals. 
             Every decision we make is guided by our commitment to serve the student body and 

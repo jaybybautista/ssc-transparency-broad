@@ -14,9 +14,11 @@ import AuthorByline from '../components/AuthorByline';
 import AuthorPicker, { EMPTY_AUTHOR } from '../components/AuthorPicker';
 import { richTextToPlain } from '../components/richText';
 import LoadMore from '../components/LoadMore';
+import { useLanguage } from '../context/LanguageContext';
 import './NarrativeReports.css';
 
 const NarrativeReports = () => {
+  const { t } = useLanguage();
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
   const { narrativeReports: reports, createNarrativeReport, updateNarrativeReport, deleteNarrativeReport, getViewCount: getSharedViewCount, trackView} = useData();
@@ -230,8 +232,8 @@ const NarrativeReports = () => {
     <div className="narrative-page">
       <div className="page-header">
         <div className="page-header-content container">
-          <h1>Narrative Reports</h1>
-          <p>Comprehensive documentation of SSC activities, events, and programs with detailed accounts and outcomes.</p>
+          <h1>{t('nar.title')}</h1>
+          <p>{t('nar.subtitle')}</p>
           {isAdmin && (
             <button className="admin-add-btn" onClick={handleAdd}>
               <FiPlus /> Add Report
@@ -244,7 +246,7 @@ const NarrativeReports = () => {
         <div className="narrative-info">
           <FiBook className="info-icon" />
           <div>
-            <h3>About Narrative Reports</h3>
+            <h3>{t('nar.about')}</h3>
             <p>Narrative reports provide detailed documentation of SSC-organized events and activities. These reports include objectives, proceedings, outcomes, and recommendations for future improvements.</p>
           </div>
         </div>
@@ -312,13 +314,13 @@ const NarrativeReports = () => {
                 {report.fileUrl && (
                   <div className="report-file-badge" onClick={(e) => e.stopPropagation()}>
                     <FiFileText />
-                    <span>{isAdmin && report.fileName ? report.fileName : 'Attached Document'}</span>
+                    <span>{isAdmin && report.fileName ? report.fileName : t('common.attachedDocument')}</span>
                   </div>
                 )}
 
                 <div className="report-actions-row">
                   <button className="see-more-btn">
-                    <FiFileText /> See More
+                    <FiFileText /> {t('common.seeMore')}
                   </button>
                   {report.fileUrl && (
                     <>
@@ -416,10 +418,10 @@ const NarrativeReports = () => {
                 <RichContent html={selectedReport.summary || selectedReport.description} />
               {selectedReport.fileUrl && (
                 <div className="modal-section" style={{ marginTop: '1.25rem' }}>
-                  <h4>Attached Document</h4>
+                  <h4>{t('common.attachedDocument')}</h4>
                   <div className="modal-file-download">
                     <FiFileText className="file-icon" />
-                    <span className="file-name">{isAdmin && selectedReport.fileName ? selectedReport.fileName : 'Attached Document'}</span>
+                    <span className="file-name">{isAdmin && selectedReport.fileName ? selectedReport.fileName : t('common.attachedDocument')}</span>
                     <button
                       type="button"
                       className="btn btn-outline"

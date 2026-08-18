@@ -10,9 +10,11 @@ import RichContent from '../components/RichContent';
 import RichTextEditor from '../components/RichTextEditor';
 import AddToCalendar from '../components/AddToCalendar';
 import CalendarSyncPanel from '../components/CalendarSyncPanel';
+import { useLanguage } from '../context/LanguageContext';
 import './Calendar.css';
 
 const Calendar = () => {
+  const { t } = useLanguage();
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
   const { events, createEvent, updateEvent, deleteEvent, getViewCount: getSharedViewCount, trackView} = useData();
@@ -142,10 +144,10 @@ const Calendar = () => {
   };
 
   const statusOptions = [
-    { value: 'all', label: 'All Status', color: null },
-    { value: 'planned', label: 'Planned', color: 'var(--status-planned)' },
-    { value: 'pending', label: 'Pending', color: 'var(--status-pending)' },
-    { value: 'approved', label: 'Approved', color: 'var(--status-approved)' },
+    { value: 'all', label: t('cal.allStatus'), color: null },
+    { value: 'planned', label: t('cal.planned'), color: 'var(--status-planned)' },
+    { value: 'pending', label: t('cal.pending'), color: 'var(--status-pending)' },
+    { value: 'approved', label: t('cal.approved'), color: 'var(--status-approved)' },
   ];
 
   // Close dropdown when clicking outside
@@ -278,8 +280,8 @@ const Calendar = () => {
     <div className="calendar-page">
       <div className="page-header">
         <div className="page-header-content container">
-          <h1>Unified Calendar of Activities</h1>
-          <p>View all scheduled events and activities. Color-coded for easy tracking of event status.</p>
+          <h1>{t('cal.title')}</h1>
+          <p>{t('cal.subtitle')}</p>
           {isAdmin && (
             <button className="admin-add-btn" onClick={handleAdd}>
               <FiPlus /> Add Event
@@ -291,22 +293,22 @@ const Calendar = () => {
       <div className="container section">
         {/* Legend */}
         <div className="calendar-legend">
-          <h3><FiCalendar /> Status Legend</h3>
+          <h3><FiCalendar /> {t('cal.legend')}</h3>
           <div className="legend-items">
             <div className="legend-item">
               <span className="legend-dot planned"></span>
-              <span>Planned</span>
-              <small>Event is scheduled</small>
+              <span>{t('cal.planned')}</span>
+              <small>{t('cal.plannedHint')}</small>
             </div>
             <div className="legend-item">
               <span className="legend-dot pending"></span>
-              <span>Pending</span>
-              <small>Awaiting approval</small>
+              <span>{t('cal.pending')}</span>
+              <small>{t('cal.pendingHint')}</small>
             </div>
             <div className="legend-item">
               <span className="legend-dot approved"></span>
-              <span>Approved</span>
-              <small>Confirmed event</small>
+              <span>{t('cal.approved')}</span>
+              <small>{t('cal.approvedHint')}</small>
             </div>
           </div>
         </div>
@@ -324,7 +326,7 @@ const Calendar = () => {
                   <FiChevronRight />
                 </button>
               </div>
-              <button onClick={goToToday} className="today-btn">Today</button>
+              <button onClick={goToToday} className="today-btn">{t('cal.today')}</button>
             </div>
 
             <div className="calendar-grid">
@@ -368,7 +370,7 @@ const Calendar = () => {
               <h3>
                 {selectedDate 
                   ? selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-                  : 'Upcoming Events'
+                  : t('cal.upcoming')
                 }
               </h3>
               <div className="filter-dropdown" ref={dropdownRef}>
@@ -385,7 +387,7 @@ const Calendar = () => {
                 
                 {dropdownOpen && (
                   <div className="dropdown-menu">
-                    <div className="dropdown-header">Filter by Status</div>
+                    <div className="dropdown-header">{t('cal.filterByStatus')}</div>
                     {statusOptions.map((option) => (
                       <button
                         key={option.value}
@@ -417,7 +419,7 @@ const Calendar = () => {
 
             <div className="sidebar-datepicker">
               <label htmlFor="calendar-date-picker">
-                <FiCalendar /> Jump to a date
+                <FiCalendar /> {t('cal.jumpToDate')}
               </label>
               <div className="datepicker-row">
                 <input
@@ -466,7 +468,7 @@ const Calendar = () => {
                           <span><FiClock /> {event.time}</span>
                           <span><FiMapPin /> {event.location}</span>
                         </div>
-                        <button className="see-more-btn">See More</button>
+                        <button className="see-more-btn">{t('common.seeMore')}</button>
                       </div>
                       {isAdmin && (
                         <div className="admin-actions">
@@ -482,7 +484,7 @@ const Calendar = () => {
                   ))
                 ) : (
                   <div className="no-events">
-                    <p>No events scheduled for this date.</p>
+                    <p>{t('cal.noneOnDate')}</p>
                   </div>
                 )
               ) : (
@@ -506,7 +508,7 @@ const Calendar = () => {
                         <span><FiClock /> {event.time}</span>
                         <span><FiMapPin /> {event.location}</span>
                       </div>
-                      <button className="see-more-btn">See More</button>
+                      <button className="see-more-btn">{t('common.seeMore')}</button>
                     </div>
                     {isAdmin && (
                       <div className="admin-actions">
@@ -575,7 +577,7 @@ const Calendar = () => {
                 <div className="event-modal-actions">
                   <AddToCalendar event={selectedEvent} />
                   <span className="event-modal-actions-hint">
-                    Adds this activity, with a reminder, to your own calendar app.
+                    {t('cal.addToCalendarHint')}
                   </span>
                 </div>
               </div>

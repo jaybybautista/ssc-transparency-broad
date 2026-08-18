@@ -11,9 +11,11 @@ import RichTextEditor from '../components/RichTextEditor';
 import { richTextToPlain } from '../components/richText';
 import { AlertSubscribeButton } from '../components/AlertSubscribe';
 import LoadMore from '../components/LoadMore';
+import { useLanguage } from '../context/LanguageContext';
 import './Announcements.css';
 
 const Announcements = () => {
+  const { t } = useLanguage();
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
   const {
@@ -161,8 +163,8 @@ const Announcements = () => {
     <div className="announcements-page">
       <div className="page-header">
         <div className="page-header-content container">
-          <h1>Announcements</h1>
-          <p>Stay informed with the latest news, updates, and important information from the administration and Student Supreme Council.</p>
+          <h1>{t('ann.title')}</h1>
+          <p>{t('ann.subtitle')}</p>
           <div className="page-header-actions">
             {!isAdmin && <AlertSubscribeButton label="Notify me" />}
             {isAdmin && (
@@ -181,7 +183,7 @@ const Announcements = () => {
             <FiSearch className="search-icon" />
             <input
               type="text"
-              placeholder="Search announcements..."
+              placeholder={t('ann.search')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
@@ -207,7 +209,7 @@ const Announcements = () => {
           <span>{isLoading ? 'Loading announcements...' : `Showing ${filteredAnnouncements.length} announcement${filteredAnnouncements.length !== 1 ? 's' : ''}`}</span>
           {activeFilter !== 'All' && (
             <button className="clear-filter" onClick={() => setActiveFilter('All')}>
-              Clear filter
+              {t('common.clearFilter')}
             </button>
           )}
         </div>
@@ -248,7 +250,7 @@ const Announcements = () => {
                         </div>
                       )}
                       <button type="button" className="announcement-read-more" onClick={() => setReadItem(announcement)}>
-                        Read more
+                        {t('common.readMore')}
                       </button>
                     </div>
                     {isAdmin && (
@@ -270,7 +272,7 @@ const Announcements = () => {
 
         {/* Regular Announcements */}
         <div className="announcements-section">
-          {pinnedAnnouncements.length > 0 && <h2 className="section-label">Recent Announcements</h2>}
+          {pinnedAnnouncements.length > 0 && <h2 className="section-label">{t('ann.recent')}</h2>}
           {regularAnnouncements.length > 0 ? (
             <div className="announcements-list">
               {regularAnnouncements.map((announcement) => {
@@ -304,7 +306,7 @@ const Announcements = () => {
                         </div>
                       )}
                       <button type="button" className="announcement-read-more" onClick={() => setReadItem(announcement)}>
-                        Read more
+                        {t('common.readMore')}
                       </button>
                     </div>
                     {isAdmin && (
@@ -323,7 +325,7 @@ const Announcements = () => {
             </div>
           ) : (
             <div className="no-results">
-              <p>No announcements found matching your criteria.</p>
+              <p>{t('ann.none')}</p>
             </div>
           )}
 

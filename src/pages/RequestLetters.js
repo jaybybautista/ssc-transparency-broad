@@ -7,9 +7,11 @@ import { useDialog } from '../components/DialogProvider';
 import { uploadFiles, downloadDocument } from '../lib/uploads';
 import DocumentViewerModal from '../components/DocumentViewerModal';
 import AdminSearchBar, { matchesQuery } from '../components/AdminSearchBar';
+import { useLanguage } from '../context/LanguageContext';
 import './RequestLetters.css';
 
 const RequestLetters = () => {
+  const { t } = useLanguage();
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
   const { requestTypes, createRequestType, updateRequestType, deleteRequestType } = useData();
@@ -150,8 +152,8 @@ const RequestLetters = () => {
     <div className="request-page">
       <div className="page-header">
         <div className="page-header-content container">
-          <h1>Request Letters</h1>
-          <p>Download request letter templates for equipment borrowing, venue reservation, financial assistance, and more.</p>
+          <h1>{t('req.title')}</h1>
+          <p>{t('req.subtitle')}</p>
           {isAdmin && (
             <button className="admin-add-btn" onClick={handleAdd}>
               <FiPlus /> Add Request Type
@@ -164,7 +166,7 @@ const RequestLetters = () => {
         <div className="request-info">
           <FiFileText className="info-icon" />
           <div>
-            <h3>Download Request Templates</h3>
+            <h3>{t('req.heading')}</h3>
             <p>Select a request type below to learn more about the requirements and download the appropriate template. Submit completed forms to the SSC Office.</p>
           </div>
         </div>
@@ -208,7 +210,7 @@ const RequestLetters = () => {
                 {isExpanded && (
                   <div className="type-details">
                     <div className="requirements">
-                      <h4>Requirements:</h4>
+                      <h4>{t('req.requirements')}</h4>
                       <ul>
                         {requestType.requirements.map((req, index) => (
                           <li key={index}>{req}</li>
@@ -226,7 +228,7 @@ const RequestLetters = () => {
                               setViewerFile({ url: requestType.templateUrl, name: requestType.templateName, title: requestType.type });
                             }}
                           >
-                            <FiEye /> View Template
+                            <FiEye /> {t('req.viewTemplate')}
                           </button>
                           <button
                             type="button"
@@ -236,7 +238,7 @@ const RequestLetters = () => {
                               downloadDocument(requestType.templateUrl, requestType.templateName || 'template');
                             }}
                           >
-                            <FiDownload /> Download Template
+                            <FiDownload /> {t('req.downloadTemplate')}
                           </button>
                         </>
                       ) : (
@@ -248,7 +250,7 @@ const RequestLetters = () => {
                             notify('No template file has been uploaded for this request type yet.');
                           }}
                         >
-                          <FiDownload /> Download Template
+                          <FiDownload /> {t('req.downloadTemplate')}
                         </button>
                       )}
                       {isAdmin && requestType.templateName && <span className="template-name">{requestType.templateName}</span>}

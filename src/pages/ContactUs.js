@@ -17,6 +17,7 @@ import { SiGmail } from 'react-icons/si';
 import { contactInfo } from '../data/sampleData';
 import { useData, TICKET_TYPES, SUGGESTION_CATEGORIES } from '../context/DataContext';
 import { useDialog } from '../components/DialogProvider';
+import { useLanguage } from '../context/LanguageContext';
 import './ContactUs.css';
 
 const STATUS_LABELS = {
@@ -48,6 +49,7 @@ const EMPTY_TICKET = {
 };
 
 const ContactUs = () => {
+  const { t } = useLanguage();
   const { createTicket, lookupTicket, createSuggestion } = useData();
   const { notify } = useDialog();
 
@@ -139,7 +141,7 @@ const ContactUs = () => {
     <div className="contact-page">
       <div className="page-header">
         <div className="page-header-content container">
-          <h1>Student Feedback &amp; Query Portal</h1>
+          <h1>{t('contact.title')}</h1>
           <p>
             Send the council an inquiry, a venue or equipment request, or a formal grievance — or drop an
             anonymous suggestion. Every submission reaches the SSC directly.
@@ -424,7 +426,7 @@ const ContactUs = () => {
 
         {/* Contact Information */}
         <div className="contact-info-section">
-          <h2>Other ways to reach us</h2>
+          <h2>{t('contact.otherWays')}</h2>
           <p className="info-intro">
             Prefer to talk in person? Visit the SSC Office during office hours, or reach us through any
             of the channels below.
@@ -436,7 +438,7 @@ const ContactUs = () => {
                 <FiMapPin />
               </div>
               <div className="info-content">
-                <h4>Office Location</h4>
+                <h4>{t('contact.office')}</h4>
                 <p>{contactInfo.office}</p>
               </div>
             </div>
@@ -446,7 +448,7 @@ const ContactUs = () => {
                 <FiMail />
               </div>
               <div className="info-content">
-                <h4>Email Address</h4>
+                <h4>{t('contact.email')}</h4>
                 <p>{contactInfo.email}</p>
               </div>
             </div>
@@ -456,7 +458,7 @@ const ContactUs = () => {
                 <FiPhone />
               </div>
               <div className="info-content">
-                <h4>Phone Number</h4>
+                <h4>{t('contact.phone')}</h4>
                 <p>{contactInfo.phone}</p>
               </div>
             </div>
@@ -466,14 +468,14 @@ const ContactUs = () => {
                 <FiClock />
               </div>
               <div className="info-content">
-                <h4>Office Hours</h4>
+                <h4>{t('contact.hours')}</h4>
                 <p>{contactInfo.officeHours}</p>
               </div>
             </div>
           </div>
 
           <div className="social-section">
-            <h4>Connect with Us</h4>
+            <h4>{t('contact.connect')}</h4>
             <div className="social-links">
               <a href="https://facebook.com/PSUurdanetaSSC" className="social-link facebook" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
                 <FaFacebookF />
@@ -487,7 +489,7 @@ const ContactUs = () => {
 
         {/* FAQ Section */}
         <div className="faq-section">
-          <h2>Frequently Asked Questions</h2>
+          <h2>{t('contact.faq')}</h2>
           <div className="faq-grid">
             <div className="faq-item">
               <h4>How can I request documents from SSC?</h4>

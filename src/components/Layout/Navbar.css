@@ -366,34 +366,34 @@
   }
 }
 
-/* Collapsed state, driven by the measurement in Navbar.js rather than by a
-   pixel width — see the note there.
+/* The links fold into the hamburger only once there is genuinely no room. With
+   Admin reduced to an icon and the bar allowed 1720px, everything fits inline
+   well below this in both languages. */
+@media (max-width: 1500px) {
+  .navbar-links {
+    display: none;
+  }
 
-   Moved out of the flow instead of display:none so its natural width can still
-   be measured; that is what lets the bar expand again when there is room, and
-   in another language. */
-.navbar-links.is-collapsed {
-  position: absolute;
-  left: -9999px;
-  top: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.navbar-container.is-compact .mobile-menu-btn {
-  display: inline-flex;
+  .mobile-menu-btn {
+    display: inline-flex;
+  }
 }
 
 /* Below this the two right-hand buttons keep their icons only. */
+/* Admin is icon-only at every width — see Navbar.js. */
+.admin-btn.icon-only {
+  width: var(--nav-control-h);
+  padding: 0;
+  justify-content: center;
+}
+
 @media (max-width: 900px) {
   .connect-btn span,
-  .admin-btn span,
   .return-user-btn span {
     display: none;
   }
 
   .connect-btn,
-  .admin-btn,
   .return-user-btn {
     width: var(--nav-control-h);
     padding: 0;

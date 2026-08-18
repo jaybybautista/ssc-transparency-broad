@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiFileText, FiArrowRight, FiBell, FiAward, FiCreditCard, FiAlertCircle, FiInfo, FiEye, FiX, FiCalendar, FiClock } from 'react-icons/fi';
 import { useData } from '../context/DataContext';
+import { useLanguage } from '../context/LanguageContext';
 import './TransparencyBoard.css';
 
 const TransparencyBoard = () => {
+  const { t } = useLanguage();
   // This page read from `sampleData` — the hardcoded demo content — so the
   // landing page showed invented announcements rather than the board's own,
   // however much real content had been published.
@@ -53,8 +55,8 @@ const TransparencyBoard = () => {
     <div className="transparency-board">
       <div className="page-header">
         <div className="page-header-content container">
-          <h1>Virtual Transparency Board</h1>
-          <p>Access all official communications, announcements, and memorandums in one centralized platform. Stay informed and engaged with your student government.</p>
+          <h1>{t('board.title')}</h1>
+          <p>{t('board.subtitle')}</p>
         </div>
       </div>
 
@@ -66,8 +68,8 @@ const TransparencyBoard = () => {
               <FiBell />
             </div>
             <div className="nav-content">
-              <h3>Announcements</h3>
-              <p>Official communications and updates</p>
+              <h3>{t('board.announcementsCard')}</h3>
+              <p>{t('board.announcementsCardDesc')}</p>
               <ul className="nav-categories">
                 <li>Admin Announcements</li>
                 <li>Scholarship Vacancies</li>
@@ -84,8 +86,8 @@ const TransparencyBoard = () => {
               <FiFileText />
             </div>
             <div className="nav-content">
-              <h3>Memorandum Orders</h3>
-              <p>Official orders and directives</p>
+              <h3>{t('board.memosCard')}</h3>
+              <p>{t('board.memosCardDesc')}</p>
               <ul className="nav-categories">
                 <li>Policy Updates</li>
                 <li>Guidelines</li>
@@ -101,10 +103,10 @@ const TransparencyBoard = () => {
           <div className="section-header-flex">
             <div>
               <h2>📌 Pinned Announcements</h2>
-              <p>Important updates that require your attention</p>
+              <p>{t('board.pinned')}</p>
             </div>
             <Link to="/announcements" className="btn btn-outline">
-              View All <FiArrowRight />
+              {t('common.viewAll')} <FiArrowRight />
             </Link>
           </div>
 
@@ -132,7 +134,7 @@ const TransparencyBoard = () => {
                         day: 'numeric'
                       })}
                     </span>
-                    <button className="see-more-btn">See More</button>
+                    <button className="see-more-btn">{t('common.seeMore')}</button>
                   </div>
                 </div>
               );
@@ -144,11 +146,11 @@ const TransparencyBoard = () => {
         <section className="board-section">
           <div className="section-header-flex">
             <div>
-              <h2>Recent Memorandum Orders</h2>
-              <p>Latest official directives and policies</p>
+              <h2>{t('board.recentMemos')}</h2>
+              <p>{t('board.recentMemosDesc')}</p>
             </div>
             <Link to="/memorandum" className="btn btn-outline">
-              View All <FiArrowRight />
+              {t('common.viewAll')} <FiArrowRight />
             </Link>
           </div>
 
@@ -168,7 +170,7 @@ const TransparencyBoard = () => {
                   <span className="view-count">
                     <FiEye /> {getViewCount('memo', memo.id)}
                   </span>
-                  <button className="see-more-btn">See More</button>
+                  <button className="see-more-btn">{t('common.seeMore')}</button>
                 </div>
               </div>
             ))}
@@ -179,15 +181,15 @@ const TransparencyBoard = () => {
         <section className="board-section">
           <div className="info-grid">
             <div className="info-card">
-              <h4>Stay Updated</h4>
+              <h4>{t('board.stayUpdated')}</h4>
               <p>Check the transparency board regularly for the latest announcements and memorandums from the administration and student council.</p>
             </div>
             <div className="info-card">
-              <h4>Official Documents</h4>
+              <h4>{t('board.officialDocs')}</h4>
               <p>All documents posted here are official communications. For verification, visit the SSC Office during office hours.</p>
             </div>
             <div className="info-card">
-              <h4>Have Questions?</h4>
+              <h4>{t('board.questions')}</h4>
               <p>If you have questions about any announcement or memorandum, feel free to contact us through our official channels.</p>
             </div>
           </div>

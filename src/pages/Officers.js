@@ -11,6 +11,7 @@ import OfficerAvatar from '../components/OfficerAvatar';
 import ViewToggle from '../components/ViewToggle';
 import '../components/OfficerListView.css';
 import { formatAcademicYear } from '../lib/academicYear';
+import { useLanguage } from '../context/LanguageContext';
 import './Officers.css';
 
 const DIVISIONS = [
@@ -23,6 +24,7 @@ const DIVISIONS = [
 ];
 
 const Officers = () => {
+  const { t } = useLanguage();
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
   const { officers, createOfficer, updateOfficer, deleteOfficer, selectedYear, availableYears } = useData();
@@ -174,8 +176,8 @@ const Officers = () => {
     <div className="officers-page">
       <div className="page-header">
         <div className="page-header-content container">
-          <h1>Meet the Officers</h1>
-          <p>Get to know the dedicated student leaders who serve and represent the student body with passion and commitment.</p>
+          <h1>{t('off.title')}</h1>
+          <p>{t('off.subtitle')}</p>
           {isAdmin && (
             <button className="admin-add-btn" onClick={handleAdd}>
               <FiPlus /> Add Officer
@@ -187,7 +189,7 @@ const Officers = () => {
       <div className="container section">
         {!officers.length && (
           <div className="officers-message">
-            <h3>No officers yet</h3>
+            <h3>{t('off.none')}</h3>
             <p>Add officers from the admin form and they will appear here automatically.</p>
           </div>
         )}
@@ -265,14 +267,14 @@ const Officers = () => {
 
         {/* Message from SSC */}
         <div className="officers-message">
-          <h3>A Message from Your Student Council</h3>
+          <h3>{t('about.message')}</h3>
           <p>
             We are honored to serve as your Student Supreme Council officers. Our commitment is to represent 
             your voice, address your concerns, and create meaningful opportunities for growth and development. 
             Together, we can build a stronger, more united student community.
           </p>
           <p>
-            <strong>Your voice matters.</strong> Don't hesitate to reach out to any of our officers for 
+            <strong>{t('about.voiceMatters')}</strong> Don't hesitate to reach out to any of our officers for 
             questions, suggestions, or concerns. We are here to serve you.
           </p>
         </div>

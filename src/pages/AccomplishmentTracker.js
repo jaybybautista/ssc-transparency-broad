@@ -10,9 +10,11 @@ import RichContent from '../components/RichContent';
 import RichTextEditor from '../components/RichTextEditor';
 import { richTextToPlain } from '../components/richText';
 import LoadMore from '../components/LoadMore';
+import { useLanguage } from '../context/LanguageContext';
 import './AccomplishmentTracker.css';
 
 const AccomplishmentTracker = () => {
+  const { t } = useLanguage();
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
   const { accomplishments, createAccomplishment, updateAccomplishment, deleteAccomplishment, getViewCount: getSharedViewCount, trackView} = useData();
@@ -139,8 +141,8 @@ const AccomplishmentTracker = () => {
     <div className="accomplishment-page">
       <div className="page-header">
         <div className="page-header-content container">
-          <h1>Accomplishment Tracker</h1>
-          <p>Track the progress of SSC initiatives, projects, and achievements for the student body.</p>
+          <h1>{t('acc.title')}</h1>
+          <p>{t('acc.subtitle')}</p>
           {isAdmin && (
             <button className="admin-add-btn" onClick={handleAdd}>
               <FiPlus /> Add Accomplishment
@@ -252,7 +254,7 @@ const AccomplishmentTracker = () => {
                     })}
                   </span>
                 </div>
-                <button className="see-more-btn">See More</button>
+                <button className="see-more-btn">{t('common.seeMore')}</button>
               </div>
               {isAdmin && (
                 <div className="admin-actions">
@@ -315,7 +317,7 @@ const AccomplishmentTracker = () => {
                   rel="noopener noreferrer"
                   className="facebook-post-btn"
                 >
-                  <FaFacebookF /> View Facebook Post <FiExternalLink />
+                  <FaFacebookF /> {t('acc.viewPost')} <FiExternalLink />
                 </a>
               )}
               </div>
