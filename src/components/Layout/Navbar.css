@@ -23,24 +23,34 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  /* Real spacing between the three groups, so nothing can butt up against
+     its neighbour when the bar gets tight. */
+  gap: 1.25rem;
 }
 
 .navbar-logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.7rem;
+  /* The logo never shrinks. Letting it flex meant that on a 1280px screen the
+     links and the action buttons together over-subscribed the row and squeezed
+     the identity down to zero width, leaving the two crests overlapping the
+     wordmark. Folding the links into the hamburger is the correct release
+     valve, and the breakpoints below do that. */
+  flex-shrink: 0;
 }
 
 .logo-images {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
+  flex-shrink: 0;
 }
 
 .logo-ssc,
 .logo-psu {
-  width: 45px;
-  height: 45px;
+  width: 38px;
+  height: 38px;
   object-fit: contain;
   border-radius: var(--radius-md);
 }
@@ -48,11 +58,25 @@
 .logo-text {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  /* Long enough for the wordmark, capped so a future rename cannot push the
+     nav off the screen. */
+  max-width: 210px;
+}
+
+/* The wordmark used to wrap onto three lines and spill out of the 70px bar,
+   which is what made the header look broken. It now truncates instead. */
+.logo-title,
+.logo-subtitle {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .logo-title {
   font-family: var(--font-primary);
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--accent-text-deep);
   line-height: 1.2;
@@ -70,6 +94,7 @@
   display: flex;
   align-items: center;
   gap: 0.15rem;
+  flex-shrink: 0;
 }
 
 .nav-item {
@@ -80,11 +105,12 @@
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.6rem 0.85rem;
+  height: var(--nav-control-h);
+  padding: 0 0.8rem;
   font-size: 0.85rem;
   font-weight: 500;
   color: var(--gray-700);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-full);
   transition: all var(--transition-fast);
   white-space: nowrap;
 }
@@ -154,74 +180,149 @@
 .navbar-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
+  flex-shrink: 0;
 }
 
-.connect-btn {
+/* ---------------------------------------------------------------------------
+   One shape for every control in this bar.
+
+   Search, language and year arrived as three separately-styled pills with
+   different heights and corner radii, sitting next to two buttons with a third
+   height and a fourth radius. Everything below shares --nav-control-h and the
+   same pill radius, so the row reads as one set of controls.
+--------------------------------------------------------------------------- */
+
+.navbar-tools {
   display: flex;
+  align-items: stretch;
+  height: var(--nav-control-h);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  /* NOT overflow:hidden — that would clip the year dropdown, which is absolutely
+     positioned inside this group. The end caps get their radius individually
+     instead, so a hover tint still follows the rounded ends. */
+}
+
+/* The controls inside give up their own borders and radii to the group. */
+.navbar-tools .gs-trigger,
+.navbar-tools .lang-toggle,
+.navbar-tools .ay-trigger {
+  height: 100%;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 0 0.7rem;
+}
+
+.navbar-tools .gs-trigger:hover,
+.navbar-tools .ay-trigger:hover {
+  background: var(--gray-50);
+}
+
+/* End caps, so a hover or archive tint stays inside the rounded outline. */
+.navbar-tools > :first-child,
+.navbar-tools .gs-trigger {
+  border-radius: var(--radius-full) 0 0 var(--radius-full);
+}
+
+.navbar-tools > :last-child,
+.navbar-tools > :last-child .ay-trigger {
+  border-radius: 0 var(--radius-full) var(--radius-full) 0;
+}
+
+.navbar-tools .ay-picker,
+.navbar-tools .lang-toggle {
+  /* Hairline separators instead of three floating outlines. Named explicitly
+     rather than `* + *` because the search modal renders as a sibling here. */
+  border-left: 1px solid var(--gray-200);
+}
+
+.navbar-tools .ay-picker {
+  display: flex;
+  align-items: stretch;
+}
+
+/* The archive state still needs to stand out, but as a tint rather than a
+   differently-shaped pill. */
+.navbar-tools .ay-picker.is-archive .ay-trigger {
+  background: var(--warn-soft);
+  color: var(--warn-strong);
+}
+
+.navbar-tools .lang-toggle {
+  gap: 0.1rem;
+  padding: 0 0.45rem 0 0.6rem;
+}
+
+.navbar-tools .lang-option {
+  padding: 0.24rem 0.45rem;
+}
+
+.connect-btn,
+.admin-btn,
+.return-user-btn {
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.25rem;
-  background: var(--bg-gradient);
-  color: white;
-  font-size: 0.875rem;
+  gap: 0.45rem;
+  height: var(--nav-control-h);
+  padding: 0 1rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-full);
+  /* The label used to wrap to two lines inside the button. */
+  white-space: nowrap;
   transition: all var(--transition-fast);
 }
 
+.connect-btn {
+  background: var(--bg-gradient);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
 .connect-btn:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
 
 .admin-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.25rem;
   background: transparent;
   color: var(--gray-600);
-  font-size: 0.875rem;
   font-weight: 500;
-  border-radius: var(--radius-lg);
   border: 1px solid var(--gray-300);
-  transition: all var(--transition-fast);
 }
 
 .admin-btn:hover {
   background: var(--gray-100);
-  color: var(--gray-700);
+  color: var(--gray-800);
   border-color: var(--gray-400);
 }
 
 .return-user-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.25rem;
-  background: #10b981;
-  color: white;
-  font-size: 0.875rem;
-  font-weight: 600;
-  border-radius: var(--radius-lg);
+  background: var(--status-approved);
+  color: #fff;
   border: none;
   cursor: pointer;
-  transition: all var(--transition-fast);
 }
 
 .return-user-btn:hover {
-  background: #059669;
-  transform: translateY(-2px);
+  filter: brightness(0.93);
+  transform: translateY(-1px);
 }
 
 .mobile-menu-btn {
   display: none;
-  padding: 0.5rem;
-  font-size: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  width: var(--nav-control-h);
+  height: var(--nav-control-h);
+  font-size: 1.35rem;
   color: var(--gray-700);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-full);
+  background: var(--surface);
   transition: all var(--transition-fast);
 }
 
@@ -229,29 +330,83 @@
   background: var(--gray-100);
 }
 
-/* Responsive */
-@media (max-width: 1024px) {
-  .navbar-links {
+/* ---------------------------------------------------------------------------
+   Responsive
+
+   The old single 1024px breakpoint predates the search, language and year
+   controls. With those in the bar the links run out of room around 1250px, so
+   they now fold into the hamburger (where every one of them already exists)
+   well before anything can overlap.
+--------------------------------------------------------------------------- */
+
+/* The keyboard hint is the least load-bearing thing in the bar. */
+@media (max-width: 1600px) {
+  .gs-trigger-kbd {
     display: none;
-  }
-  
-  .mobile-menu-btn {
-    display: flex;
-  }
-  
-  .connect-btn span,
-  .admin-btn span {
-    display: none;
-  }
-  
-  .connect-btn,
-  .admin-btn {
-    padding: 0.6rem;
   }
 }
 
-@media (max-width: 480px) {
+/* Then the campus line above the wordmark. */
+@media (max-width: 1150px) {
+  .logo-subtitle {
+    display: none;
+  }
+
+  .logo-title {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 1500px) {
+  .navbar-links {
+    display: none;
+  }
+
+  .mobile-menu-btn {
+    display: inline-flex;
+  }
+}
+
+/* Below this the two right-hand buttons keep their icons only. */
+@media (max-width: 900px) {
+  .connect-btn span,
+  .admin-btn span,
+  .return-user-btn span {
+    display: none;
+  }
+
+  .connect-btn,
+  .admin-btn,
+  .return-user-btn {
+    width: var(--nav-control-h);
+    padding: 0;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 720px) {
+  .navbar-container {
+    padding: 0 1rem;
+    gap: 0.75rem;
+  }
+
+  .navbar-actions {
+    gap: 0.4rem;
+  }
+
+  /* The year switcher is the least urgent control on a phone; it stays
+     available from the Academic Year section and reappears on wider screens. */
+  .navbar-tools .ay-picker {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
   .logo-text {
+    display: none;
+  }
+
+  .logo-psu {
     display: none;
   }
 }

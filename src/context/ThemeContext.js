@@ -22,8 +22,16 @@ const readStoredTheme = () => {
   } catch (error) {
     // Private browsing can throw on localStorage access.
   }
-  // Fall back to whatever the device is set to.
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  /*
+   * Light by default, deliberately — NOT the device's preference.
+   *
+   * This is an official campus noticeboard: white is what it is meant to look
+   * like, and it is the version officers see when they check their work. A
+   * visitor whose laptop happens to be in dark mode should not get a different
+   * board from the one the council designed. Dark is a choice someone opts into
+   * with the heart in the footer, and it is remembered once they do.
+   */
+  return 'light';
 };
 
 export const ThemeProvider = ({ children }) => {

@@ -99,9 +99,15 @@ const Navbar = ({ setSidebarOpen }) => {
         </ul>
 
         <div className="navbar-actions">
-          <GlobalSearchButton />
-          <LanguageToggle />
-          <AcademicYearPicker />
+          {/* Search, language and year are one segmented control rather than
+              three separate pills — three loose controls of slightly different
+              heights beside two buttons is what made this bar look cluttered. */}
+          <div className="navbar-tools">
+            <GlobalSearchButton />
+            <LanguageToggle />
+            <AcademicYearPicker />
+          </div>
+
           <Link to="/ssc/contact" className="connect-btn">
             <FiMail />
             <span>{t('nav.contact')}</span>
@@ -125,10 +131,10 @@ const Navbar = ({ setSidebarOpen }) => {
             </Link>
           )}
           
-          <button 
+          <button
             className="mobile-menu-btn"
             onClick={() => setSidebarOpen(true)}
-            aria-label="Open menu"
+            aria-label={t('nav.openMenu')}
           >
             <FiMenu />
           </button>

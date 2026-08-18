@@ -132,6 +132,8 @@
   --sidebar-width: 280px;
   --container-max: 1400px;
   --ui-control-height: 42px;
+  /* Every control in the top bar shares this height. */
+  --nav-control-h: 38px;
   --ui-control-radius: 10px;
   --ui-card-radius: var(--radius-xl);
 }
