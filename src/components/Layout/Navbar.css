@@ -16,7 +16,12 @@
 }
 
 .navbar-container {
-  max-width: var(--container-max);
+  /* Wider than the 1400px used for page content, on purpose. That cap exists to
+     keep article text at a readable line length, which has nothing to do with a
+     row of controls — and enforcing it here meant the links never actually fitted
+     even in English. They were simply overflowing the container unnoticed until
+     the longer Filipino labels pushed the buttons off the screen. */
+  max-width: 1720px;
   margin: 0 auto;
   padding: 0 1.5rem;
   height: 100%;
@@ -26,6 +31,10 @@
   /* Real spacing between the three groups, so nothing can butt up against
      its neighbour when the bar gets tight. */
   gap: 1.25rem;
+  /* Deliberately NOT overflow:hidden — the nav dropdowns hang below this box
+     and would be clipped by it, which is the same trap that put the search
+     panel off-screen. The measurement in Navbar.js is what keeps the row
+     inside the bar. */
 }
 
 .navbar-logo {
@@ -357,14 +366,22 @@
   }
 }
 
-@media (max-width: 1500px) {
-  .navbar-links {
-    display: none;
-  }
+/* Collapsed state, driven by the measurement in Navbar.js rather than by a
+   pixel width — see the note there.
 
-  .mobile-menu-btn {
-    display: inline-flex;
-  }
+   Moved out of the flow instead of display:none so its natural width can still
+   be measured; that is what lets the bar expand again when there is room, and
+   in another language. */
+.navbar-links.is-collapsed {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.navbar-container.is-compact .mobile-menu-btn {
+  display: inline-flex;
 }
 
 /* Below this the two right-hand buttons keep their icons only. */
