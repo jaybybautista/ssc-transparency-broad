@@ -4,98 +4,6 @@
   min-height: 100vh;
 }
 
-/* Stats Overview */
-.stats-overview {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.stat-card {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  padding: 1.5rem;
-  background: var(--surface);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-md);
-}
-
-.stat-icon {
-  font-size: 2rem;
-  padding: 1rem;
-  border-radius: var(--radius-lg);
-}
-
-.stat-card.completed .stat-icon {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--status-approved);
-}
-
-.stat-card.progress .stat-icon {
-  background: rgba(245, 158, 11, 0.1);
-  color: var(--status-pending);
-}
-
-.stat-card.upcoming .stat-icon {
-  background: rgba(59, 130, 246, 0.1);
-  color: var(--status-planned);
-}
-
-.stat-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-number {
-  font-size: 2rem;
-  font-weight: 800;
-  color: var(--gray-900);
-  line-height: 1;
-}
-
-.stat-label {
-  font-size: 0.9rem;
-  color: var(--gray-500);
-}
-
-/* Filter Bar */
-.filter-bar {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-  padding: 1rem;
-  background: var(--surface);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
-}
-
-.filter-icon {
-  color: var(--gray-400);
-  margin-right: 0.5rem;
-}
-
-.filter-btn {
-  padding: 0.6rem 1.25rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--gray-600);
-  background: var(--gray-100);
-  border-radius: var(--radius-lg);
-  transition: all var(--transition-fast);
-}
-
-.filter-btn:hover {
-  background: var(--gray-200);
-}
-
-.filter-btn.active {
-  background: var(--primary-600);
-  color: white;
-}
-
 /* Accomplishments List */
 .accomplishments-list {
   display: grid;
@@ -139,7 +47,7 @@
   color: var(--status-approved);
 }
 
-.status-progress .accomplishment-status {
+.status-in-progress .accomplishment-status {
   background: rgba(245, 158, 11, 0.1);
   color: var(--status-pending);
 }
@@ -319,7 +227,7 @@
   color: #10b981;
 }
 
-.modal-status.status-progress {
+.modal-status.status-in-progress {
   background: rgba(245, 158, 11, 0.1);
   color: #f59e0b;
 }
@@ -380,7 +288,7 @@
   margin: 0;
 }
 
-.facebook-post-btn {
+.acc-evidence-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -388,8 +296,8 @@
   width: 100%;
   margin-top: 1.5rem;
   padding: 0.75rem 1rem;
-  background: #1877f2;
-  color: white;
+  background: var(--primary-600);
+  color: #fff;
   border: none;
   border-radius: 8px;
   font-size: 0.875rem;
@@ -399,12 +307,12 @@
   transition: background 0.2s;
 }
 
-.facebook-post-btn:hover {
-  background: #166fe5;
-  color: white;
+.acc-evidence-btn:hover {
+  background: var(--primary-700);
+  color: #fff;
 }
 
-.facebook-post-btn svg {
+.acc-evidence-btn svg {
   width: 16px;
   height: 16px;
 }
@@ -616,20 +524,12 @@
 
 /* Responsive */
 @media (max-width: 1024px) {
-  .stats-overview {
-    grid-template-columns: 1fr;
-  }
-  
   .accomplishments-list {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 640px) {
-  .filter-bar {
-    flex-wrap: wrap;
-  }
-  
   .accomplishment-card {
     grid-template-columns: 1fr;
     text-align: center;
@@ -645,3 +545,180 @@
     text-align: left;
   }
 }
+
+/* ======================================================================
+   Toolbar: the counts and the filter are the same control
+   ====================================================================== */
+.acc-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.acc-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  padding: 0.85rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+}
+
+.acc-filters {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.acc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--gray-100);
+  color: var(--gray-700);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.acc-chip svg {
+  font-size: 0.95rem;
+}
+
+.acc-chip:hover {
+  background: var(--gray-200);
+  color: var(--gray-900);
+}
+
+/* The count rides inside the chip, so the number can only ever mean "how many
+   are in this view". The old stats row claimed to be a summary while counting
+   just the records that happened to be loaded. */
+.acc-chip-count {
+  min-width: 1.4rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--gray-600);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.acc-chip.is-active {
+  background: var(--primary-600);
+  color: #fff;
+}
+
+/* Darkened rather than lightened: a white veil over the chip colour left the
+   number at 3.45:1 against it. */
+.acc-chip.is-active .acc-chip-count {
+  background: rgba(0, 0, 0, 0.28);
+  color: #fff;
+}
+
+/* Literal values, not the status tokens. Those are chosen to read as coloured
+   dots and fills; carrying white label text on them measured 2.56:1 for the
+   green and 2.46:1 for the gold. These are the same hues taken dark enough to
+   hold white text, in either theme. */
+.acc-chip.status-completed.is-active { background: #0b7a58; }
+.acc-chip.status-in-progress.is-active { background: #8a6408; }
+.acc-chip.status-upcoming.is-active { background: var(--primary-600); }
+
+.acc-chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--primary-200);
+}
+
+.acc-category-select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--gray-800);
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+.acc-partial-note {
+  margin: -0.75rem 0 1.25rem;
+  font-size: 0.82rem;
+  color: var(--gray-500);
+}
+
+/* ======================================================================
+   Month blocks
+   ====================================================================== */
+.acc-month {
+  margin-bottom: 2.25rem;
+}
+
+.acc-month-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--gray-700);
+}
+
+/* A rule that fills whatever the heading leaves, so the months read as
+   sections without a heavy divider on every one. */
+.acc-month-heading::after {
+  content: '';
+  order: 2;
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+}
+
+.acc-month-heading small {
+  order: 1;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--gray-100);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gray-600);
+}
+
+/* ======================================================================
+   Evidence
+   ====================================================================== */
+.accomplishment-evidence {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
+}
+
+.evidence-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: var(--gray-100);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--gray-600);
+}
+
+.evidence-chip svg {
+  font-size: 0.8rem;
+}
+

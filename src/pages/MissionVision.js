@@ -1,11 +1,12 @@
 import React from 'react';
 import { FiTarget, FiHeart, FiStar, FiCheckCircle } from 'react-icons/fi';
-import { missionVision } from '../data/sampleData';
 import { useLanguage } from '../context/LanguageContext';
+import { useData } from '../context/DataContext';
 import './MissionVision.css';
 
 const MissionVision = () => {
   const { t } = useLanguage();
+  const { siteProfile } = useData();
   return (
     <div className="mission-vision-page">
       <div className="page-header">
@@ -23,7 +24,7 @@ const MissionVision = () => {
               <FiTarget />
             </div>
             <h2>{t('about.vision')}</h2>
-            <p>{missionVision.vision}</p>
+            <p>{siteProfile.vision}</p>
           </div>
           
           <div className="mv-card mission-card">
@@ -31,7 +32,7 @@ const MissionVision = () => {
               <FiStar />
             </div>
             <h2>{t('about.mission')}</h2>
-            <p>{missionVision.mission}</p>
+            <p>{siteProfile.mission}</p>
           </div>
         </div>
 
@@ -42,7 +43,7 @@ const MissionVision = () => {
             {t('about.values')}
           </h2>
           <div className="values-grid">
-            {missionVision.coreValues.map((value, index) => (
+            {siteProfile.coreValues.map((value, index) => (
               <div key={index} className="value-card" style={{ animationDelay: `${index * 0.1}s` }}>
                 <h3>{value.title}</h3>
                 <p>{value.description}</p>
@@ -58,7 +59,7 @@ const MissionVision = () => {
             {t('about.goals')}
           </h2>
           <div className="goals-list">
-            {missionVision.goals.map((goal, index) => (
+            {siteProfile.goals.map((goal, index) => (
               <div key={index} className="goal-item" style={{ animationDelay: `${index * 0.1}s` }}>
                 <span className="goal-number">{index + 1}</span>
                 <p>{goal}</p>

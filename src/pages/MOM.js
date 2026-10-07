@@ -90,7 +90,7 @@ const MOM = () => {
   const handleDelete = async (id) => {
     const shouldDelete = await confirm({
       title: 'Delete meeting record?',
-      message: 'This meeting record will be permanently removed. This cannot be undone.',
+      message: 'This meeting record comes off the site right away. You will have a few seconds to undo it.',
       confirmLabel: 'Delete',
       tone: 'danger'
     });
@@ -111,6 +111,14 @@ const MOM = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Checked explicitly rather than left to the inputs' `required` attribute:
+    // that native validation bubble anchors unreliably on a field inside this
+    // modal's fixed, scrolling layout, so a blank title or date could silently
+    // block the submit with no visible message.
+    if (!formData.title.trim() || !formData.date) {
+      notify('Please give it a title and a date before saving.');
+      return;
+    }
     setIsUploading(true);
 
     let uploadedUrls = [];
@@ -483,7 +491,6 @@ const MOM = () => {
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
                 />
               </div>
               <div className="form-group">
@@ -492,7 +499,6 @@ const MOM = () => {
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  required
                 />
               </div>
               <div className="form-group">

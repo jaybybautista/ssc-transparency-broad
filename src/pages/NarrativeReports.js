@@ -88,7 +88,7 @@ const NarrativeReports = () => {
   const handleDelete = async (id) => {
     const shouldDelete = await confirm({
       title: 'Delete report?',
-      message: 'This report will be permanently removed. This cannot be undone.',
+      message: 'This report comes off the site right away. You will have a few seconds to undo it.',
       confirmLabel: 'Delete',
       tone: 'danger'
     });
@@ -109,6 +109,15 @@ const NarrativeReports = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Checked explicitly rather than left to the inputs' `required` attribute:
+    // that native validation bubble anchors unreliably on a field inside this
+    // modal's fixed, scrolling layout, so a blank title or date could silently
+    // block the submit with no visible message.
+    if (!formData.title.trim() || !formData.date) {
+      notify('Please give it a title and a date before saving.');
+      return;
+    }
 
     if (!richTextToPlain(formData.description).trim()) {
       notify('Please write the description/summary before saving.');
@@ -304,12 +313,16 @@ const NarrativeReports = () => {
                   </div>
                 )}
 
-                <div className="report-stats">
-                  <div className="stat">
-                    <FiUsers />
-                    <span>{report.participants} Participants</span>
+                {report.participants > 0 && (
+                  <div className="report-stats">
+                    <div className="stat">
+                      <FiUsers />
+                      <span>
+                        {report.participants} participant{report.participants === 1 ? '' : 's'}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {report.fileUrl && (
                   <div className="report-file-badge" onClick={(e) => e.stopPropagation()}>
@@ -318,12 +331,12 @@ const NarrativeReports = () => {
                   </div>
                 )}
 
-                <div className="report-actions-row">
-                  <button className="see-more-btn">
+                <div className="report-actions">
+                  <button type="button" className="see-more-btn">
                     <FiFileText /> {t('common.seeMore')}
                   </button>
                   {report.fileUrl && (
-                    <>
+                    <div className="report-doc-actions">
                       <button
                         type="button"
                         className="report-download-btn"
@@ -344,7 +357,7 @@ const NarrativeReports = () => {
                       >
                         <FiDownload /> Download
                       </button>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
@@ -462,7 +475,6 @@ const NarrativeReports = () => {
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
                 />
               </div>
               <div className="form-group">
@@ -480,7 +492,6 @@ const NarrativeReports = () => {
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  required
                 />
               </div>
               <div className="form-group">

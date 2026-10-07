@@ -23,9 +23,9 @@ import './StudentSubmissions.css';
 import './AlertSubscribers.css';
 
 const formatWhen = (value) => {
-  if (!value) return '—';
+  if (!value) return 'N/A';
   const date = typeof value?.toDate === 'function' ? value.toDate() : new Date(value);
-  if (Number.isNaN(date.getTime())) return '—';
+  if (Number.isNaN(date.getTime())) return 'N/A';
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 };
 
@@ -78,7 +78,7 @@ const AlertSubscribers = () => {
       ...memorandums.map((item) => ({
         key: `memorandum:${item.id}`,
         group: 'Memorandum Orders',
-        label: `${item.number ? `${item.number} — ` : ''}${item.title || 'Untitled memorandum'}`,
+        label: `${item.number ? `${item.number}: ` : ''}${item.title || 'Untitled memorandum'}`,
         subject: `[PSU-UCC SSC] Memorandum ${item.number || ''} ${item.title || ''}`.replace(/\s+/g, ' ').trim(),
         body: richTextToPlain(item.description || ''),
         link: '/memorandum',
@@ -123,7 +123,7 @@ const AlertSubscribers = () => {
           <h3>Verified sign-in required</h3>
           <p>
             The subscriber list is a roster of student email addresses, so the database only
-            releases it to a Google account listed in the <code>admins</code> collection — the
+            releases it to a Google account listed in the <code>admins</code> collection. The
             admin username and password cannot be checked by the server.
           </p>
 
@@ -131,7 +131,7 @@ const AlertSubscribers = () => {
             <>
               <p className="submissions-gate-current">
                 Signed in as <strong>{voter.email}</strong>
-                {isCheckingAdmin ? ' — checking access…' : ' — this account is not on the admin roster.'}
+                {isCheckingAdmin ? ': checking access…' : ': this account is not on the admin roster.'}
               </p>
               <div className="submissions-gate-actions">
                 <button type="button" className="btn-secondary" onClick={signOut}>Sign out</button>
@@ -163,7 +163,6 @@ const AlertSubscribers = () => {
       '',
       chosen ? `Read it on the SSC Virtual Board: ${origin}${chosen.link}` : `${origin}/announcements`,
       '',
-      '—',
       'PSU-Urdaneta City Campus Supreme Student Council',
       `To stop receiving these, open ${origin}/announcements and turn off email alerts.`
     ].join('\n');
@@ -264,7 +263,7 @@ const AlertSubscribers = () => {
         <h3><FiSend /> Send an email alert</h3>
         <p className="blast-explainer">
           <FiInfo /> The board has no mail server of its own, so this prepares the message in your
-          own email app with the subscribers already in <strong>BCC</strong> — students never see
+          own email app with the subscribers already in <strong>BCC</strong>, so students never see
           each other's addresses. Pick a post and only the students who asked about that topic are
           included.
         </p>
@@ -277,7 +276,7 @@ const AlertSubscribers = () => {
               value={composeSource}
               onChange={(e) => setComposeSource(e.target.value)}
             >
-              <option value="">— Blank message to everyone shown below —</option>
+              <option value="">Blank message to everyone shown below</option>
               {['Announcements', 'Memorandum Orders'].map((group) => (
                 <optgroup key={group} label={group}>
                   {sendableItems

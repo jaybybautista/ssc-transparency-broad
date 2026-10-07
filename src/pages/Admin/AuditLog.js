@@ -1,8 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FiDownload, FiInfo, FiPlus, FiEdit2, FiTrash2, FiSend, FiSettings } from 'react-icons/fi';
 import { useData } from '../../context/DataContext';
 import AdminSearchBar, { matchesQuery } from '../../components/AdminSearchBar';
+import Pagination from '../../components/Pagination';
+import { paginate } from '../../lib/pagination';
 import './AuditLog.css';
+
+const PER_PAGE = 25;
 
 const ACTION_META = {
   create: { label: 'Created', icon: FiPlus, tone: 'create' },
@@ -27,9 +31,9 @@ const COLLECTION_LABEL = {
 };
 
 const formatWhen = (value) => {
-  if (!value) return '—';
+  if (!value) return 'N/A';
   const date = typeof value?.toDate === 'function' ? value.toDate() : new Date(value);
-  if (Number.isNaN(date.getTime())) return '—';
+  if (Number.isNaN(date.getTime())) return 'N/A';
   return date.toLocaleString('en-US', {
     year: 'numeric',
     month: 'short',
@@ -43,6 +47,7 @@ const AuditLog = () => {
   const { auditLog } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [actionFilter, setActionFilter] = useState('all');
+  const [page, setPage] = useState(1);
 
   const rows = useMemo(
     () =>
@@ -58,6 +63,14 @@ const AuditLog = () => {
         ),
     [auditLog, actionFilter, searchTerm]
   );
+
+  // Back to the first page whenever the list underneath changes shape, so a
+  // filter never lands somebody on a page that no longer holds anything.
+  useEffect(() => {
+    setPage(1);
+  }, [actionFilter, searchTerm]);
+
+  const shown = paginate(rows, page, PER_PAGE);
 
   const exportCsv = () => {
     const header = ['When', 'Who', 'Action', 'Type', 'Item', 'Document ID'];
@@ -97,7 +110,7 @@ const AuditLog = () => {
       <p className="audit-explainer">
         <FiInfo />
         <span>
-          Who changed what, most recent first. Entries can never be edited or removed — the
+          Who changed what, most recent first. Entries can never be edited or removed. The
           database refuses it, for admins too. Worth being straight about the limit: the log is
           written by the app, so it records what officers do through the dashboard. It is an
           accountability aid among colleagues, not a forensic trail.
@@ -144,7 +157,7 @@ const AuditLog = () => {
         </div>
       ) : (
         <ol className="audit-list">
-          {rows.map((entry) => {
+          {shown.items.map((entry) => {
             const meta = ACTION_META[entry.action] || { label: entry.action, icon: FiEdit2, tone: 'update' };
             return (
               <li key={entry.id} className="audit-entry">
@@ -160,7 +173,7 @@ const AuditLog = () => {
                     <span className="audit-type">
                       {COLLECTION_LABEL[entry.collectionName] || entry.collectionName}
                     </span>
-                    {entry.target ? <> — <span className="audit-target">{entry.target}</span></> : null}
+                    {entry.target ? <>: <span className="audit-target">{entry.target}</span></> : null}
                   </p>
                   <p className="audit-meta">
                     {formatWhen(entry.at)}
@@ -172,6 +185,16 @@ const AuditLog = () => {
           })}
         </ol>
       )}
+
+      <Pagination
+        page={shown.page}
+        pageCount={shown.pageCount}
+        from={shown.from}
+        to={shown.to}
+        total={shown.total}
+        unit="actions"
+        onChange={setPage}
+      />
     </div>
   );
 };

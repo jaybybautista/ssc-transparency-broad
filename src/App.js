@@ -8,6 +8,7 @@ import Sidebar from './components/Layout/Sidebar';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ArchiveNotice } from './components/AcademicYearPicker';
 import UpdatePrompt from './components/UpdatePrompt';
+import UndoToast from './components/UndoToast';
 
 // Pages
 import TransparencyBoard from './pages/TransparencyBoard';
@@ -73,14 +74,18 @@ function App() {
   // visitor as not an admin so edit controls never flash into view.
   const isResolvingAdmin = isAuthLoading || isCheckingAdmin;
 
+  // Editing happens only inside the admin screen. The dashboard reuses several
+  // public page components for its sections, so they keep their controls
+  // there, while the public site always renders as a visitor sees it, even for
+  // a signed-in officer.
   const authValue = useMemo(
     () => ({
-      isAdmin: isSscAdmin,
+      isAdmin: isSscAdmin && isAdminRoute,
       isResolvingAdmin,
       adminEmail: voter?.email || '',
       signOutAdmin: signOut
     }),
-    [isSscAdmin, isResolvingAdmin, voter?.email, signOut]
+    [isSscAdmin, isAdminRoute, isResolvingAdmin, voter?.email, signOut]
   );
 
   return (
@@ -88,6 +93,10 @@ function App() {
       <div className="app">
         {/* Offline support, and the two prompts that come with it. */}
         <UpdatePrompt />
+
+        {/* Mounted once, outside the routes, so the offer to undo a delete
+            survives the navigation that often follows one. */}
+        <UndoToast />
 
         {isAdminRoute ? (
           // Admin routes without public layout

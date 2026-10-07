@@ -64,7 +64,7 @@ const MemorandumOrders = () => {
   const handleDelete = async (id) => {
     const shouldDelete = await confirm({
       title: 'Delete memorandum?',
-      message: 'This memorandum will be permanently removed. This cannot be undone.',
+      message: 'This memorandum comes off the site right away. You will have a few seconds to undo it.',
       confirmLabel: 'Delete',
       tone: 'danger'
     });
@@ -85,6 +85,15 @@ const MemorandumOrders = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Checked explicitly rather than left to these inputs' `required`
+    // attribute: that native validation bubble anchors unreliably on a field
+    // inside this modal's fixed, scrolling layout, so a blank field could
+    // silently block the submit with no visible message.
+    if (!formData.number.trim() || !formData.title.trim() || !formData.date || !formData.effectiveDate) {
+      notify('Please fill in the memo number, title, issue date and effective date before saving.');
+      return;
+    }
 
     if (!richTextToPlain(formData.description).trim()) {
       notify('Please write the description before saving.');
@@ -276,7 +285,6 @@ const MemorandumOrders = () => {
                   value={formData.number}
                   onChange={(e) => setFormData({ ...formData, number: e.target.value })}
                   placeholder="e.g., MO-2024-001"
-                  required
                 />
               </div>
               <div className="form-group">
@@ -285,7 +293,6 @@ const MemorandumOrders = () => {
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
                 />
               </div>
               <div className="form-group">
@@ -302,7 +309,6 @@ const MemorandumOrders = () => {
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  required
                 />
               </div>
               <div className="form-group">
@@ -311,7 +317,6 @@ const MemorandumOrders = () => {
                   type="date"
                   value={formData.effectiveDate}
                   onChange={(e) => setFormData({ ...formData, effectiveDate: e.target.value })}
-                  required
                 />
               </div>
               <div className="form-group">

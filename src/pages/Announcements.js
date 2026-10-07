@@ -70,7 +70,7 @@ const Announcements = () => {
   const handleDelete = async (id) => {
     const shouldDelete = await confirm({
       title: 'Delete announcement?',
-      message: 'This announcement will be permanently removed. This cannot be undone.',
+      message: 'This announcement comes off the site right away. You will have a few seconds to undo it.',
       confirmLabel: 'Delete',
       tone: 'danger'
     });
@@ -80,6 +80,14 @@ const Announcements = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Checked explicitly rather than left to the title input's `required`
+    // attribute: that native validation bubble anchors unreliably on a field
+    // inside this modal's fixed, scrolling layout, so a blank title could
+    // silently block the submit with no visible message.
+    if (!formData.title.trim()) {
+      notify('Please give it a title before saving.');
+      return;
+    }
     if (!richTextToPlain(formData.content).trim()) {
       notify('Please write the announcement content before saving.');
       return;
@@ -393,7 +401,6 @@ const Announcements = () => {
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
                 />
               </div>
               <div className="form-group">

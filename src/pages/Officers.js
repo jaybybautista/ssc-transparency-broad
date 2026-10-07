@@ -1,37 +1,25 @@
 import React, { useContext, useState, useRef, useEffect } from 'react';
-import { FiMail, FiEdit2, FiTrash2, FiPlus, FiX } from 'react-icons/fi';
+import { FiPlus, FiX } from 'react-icons/fi';
 import { AuthContext } from '../App';
 import { useData } from '../context/DataContext';
 import useModalBehaviour from '../components/useModalBehaviour';
 import { useDialog } from '../components/DialogProvider';
 import { uploadImages } from '../lib/uploads';
 import { programOptions } from '../data/sampleData';
-import AdminSearchBar, { matchesQuery } from '../components/AdminSearchBar';
-import OfficerAvatar from '../components/OfficerAvatar';
-import ViewToggle from '../components/ViewToggle';
+import OfficerDirectory from '../components/OfficerDirectory';
 import '../components/OfficerListView.css';
+import { DIVISIONS } from '../lib/officers';
 import { formatAcademicYear } from '../lib/academicYear';
 import { useLanguage } from '../context/LanguageContext';
 import './Officers.css';
-
-const DIVISIONS = [
-  'Core Officers',
-  'SSC Advisers',
-  'SSC Secretaries',
-  'Executive Department',
-  'Legislative Department',
-  'Executive Committees'
-];
 
 const Officers = () => {
   const { t } = useLanguage();
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
-  const { officers, createOfficer, updateOfficer, deleteOfficer, selectedYear, availableYears } = useData();
+  const { officers, createOfficer, updateOfficer, deleteOfficer, reorderOfficers, selectedYear, availableYears, siteProfile } = useData();
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState(() => localStorage.getItem('officersViewMode') || 'grid');
   const [selectedImageFile, setSelectedImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [uploadStatus, setUploadStatus] = useState('');
@@ -48,10 +36,6 @@ const Officers = () => {
     academicYear: ''
   });
   const fileInputRef = useRef(null);
-
-  useEffect(() => {
-    localStorage.setItem('officersViewMode', viewMode);
-  }, [viewMode]);
 
   useEffect(() => {
     if (selectedImageFile) {
@@ -96,12 +80,21 @@ const Officers = () => {
   const handleDelete = async (id) => {
     const shouldDelete = await confirm({
       title: 'Delete officer?',
-      message: 'This officer will be permanently removed. This cannot be undone.',
+      message: 'This officer comes off the site right away. You will have a few seconds to undo it.',
       confirmLabel: 'Delete',
       tone: 'danger'
     });
     if (!shouldDelete) return;
     deleteOfficer(id);
+  };
+
+  const handleReorder = async (updates) => {
+    try {
+      await reorderOfficers(updates);
+    } catch (error) {
+      console.error('Failed saving the officer order:', error);
+      notify('Could not save the new order: ' + (error?.message || String(error)));
+    }
   };
 
   const handleRemoveImage = () => {
@@ -113,6 +106,14 @@ const Officers = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Checked explicitly rather than left to the inputs' `required` attribute:
+    // that native validation bubble anchors unreliably on a field inside this
+    // modal's fixed, scrolling layout, so a blank name or position could
+    // silently block the submit with no visible message.
+    if (!formData.name.trim() || !formData.position.trim()) {
+      notify('Please give this officer a name and a position before saving.');
+      return;
+    }
     setIsSaving(true);
     let uploadedImage = '';
 
@@ -155,19 +156,6 @@ const Officers = () => {
     }
   };
 
-  const visibleOfficers = isAdmin
-    ? officers.filter((officer) =>
-        matchesQuery(searchTerm, [
-          officer.name,
-          officer.position,
-          officer.division,
-          officer.course,
-          officer.yearLevel,
-          officer.email
-        ])
-      )
-    : officers;
-
   // Handed to useModalBehaviour so Tab stays inside the dialog.
   const adminModalRef = useRef(null);
   useModalBehaviour(showAdminModal, () => setShowAdminModal(false), adminModalRef);
@@ -194,76 +182,17 @@ const Officers = () => {
           </div>
         )}
 
-        {!!officers.length && (
-          <div className="view-toolbar">
-            <span className="view-toolbar-count">
-              {visibleOfficers.length} officer{visibleOfficers.length === 1 ? '' : 's'}
-            </span>
-            <ViewToggle value={viewMode} onChange={setViewMode} />
-          </div>
-        )}
+        <OfficerDirectory
+          officers={officers}
+          orgChartUrl={siteProfile.orgChartUrl}
+          academicYear={selectedYear}
+          isAdmin={isAdmin}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onReorder={handleReorder}
+          headingLevel="h2"
+        />
 
-        {isAdmin && !!officers.length && (
-          <AdminSearchBar
-            value={searchTerm}
-            onChange={setSearchTerm}
-            placeholder="Search by name, position, section, program, or email..."
-            resultCount={visibleOfficers.length}
-            totalCount={officers.length}
-          />
-        )}
-
-        {isAdmin && searchTerm && !visibleOfficers.length && (
-          <div className="admin-search-empty">
-            No officers match <strong>"{searchTerm}"</strong>.
-          </div>
-        )}
-
-        {DIVISIONS.map((division) => {
-          const divisionOfficers = visibleOfficers.filter((officer) => (officer.division || 'Core Officers') === division);
-          if (!divisionOfficers.length) {
-            return null;
-          }
-
-          return (
-            <section key={division} className="officer-section">
-              <h2 className="grid-title">{division}</h2>
-              <div className={`officers-grid ${viewMode === 'list' ? 'is-list' : ''}`}>
-                {divisionOfficers.map((officer, index) => (
-                  <div key={officer.id} className="officer-card" style={{ animationDelay: `${index * 0.05}s` }}>
-                    <div className="officer-image">
-                      <OfficerAvatar src={officer.image} alt={officer.name} />
-                      <div className="officer-overlay">
-                        {officer.email && (
-                          <a href={`mailto:${officer.email}`} className="overlay-btn" title={`Email ${officer.name}`}>
-                            <FiMail />
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                    <div className="officer-info">
-                      <span className="officer-position">{officer.position}</span>
-                      <h3 className="officer-name">{officer.name}</h3>
-                      {officer.course && <p className="officer-course">{officer.course}</p>}
-                      {officer.yearLevel && <p className="officer-year">{officer.yearLevel}</p>}
-                      {officer.quote && <p className="officer-quote">"{officer.quote}"</p>}
-                    </div>
-                    {isAdmin && (
-                      <div className="admin-actions">
-                        <button className="admin-edit-btn" onClick={() => handleEdit(officer)}>
-                          <FiEdit2 />
-                        </button>
-                        <button className="admin-delete-btn" onClick={() => handleDelete(officer.id)}>
-                          <FiTrash2 />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-          );
-        })}
 
         {/* Message from SSC */}
         <div className="officers-message">
@@ -290,8 +219,8 @@ const Officers = () => {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="admin-modal-form">
-              <div className="form-group"><label>Name</label><input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required /></div>
-              <div className="form-group"><label>Position</label><input value={formData.position} onChange={(e) => setFormData({ ...formData, position: e.target.value })} required /></div>
+              <div className="form-group"><label>Name</label><input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} /></div>
+              <div className="form-group"><label>Position</label><input value={formData.position} onChange={(e) => setFormData({ ...formData, position: e.target.value })} /></div>
               <div className="form-group">
                 <label>Section</label>
                 <select value={formData.division || 'Core Officers'} onChange={(e) => setFormData({ ...formData, division: e.target.value })}>
@@ -318,7 +247,7 @@ const Officers = () => {
                   <option value="">Select program</option>
                   {programOptions.map((program) => (
                     <option key={program.name} value={program.name}>
-                      {program.name} ({program.years} years)
+                      {program.name}
                     </option>
                   ))}
                 </select>
@@ -363,8 +292,6 @@ const Officers = () => {
                 />
               </div>
 
-              <div className="form-group"><label>Quote</label><textarea value={formData.quote} onChange={(e) => setFormData({ ...formData, quote: e.target.value })} rows="3" /></div>
-              
               <div className="form-actions">
                 <button type="button" className="btn-cancel" onClick={() => setShowAdminModal(false)}>Cancel</button>
                 <button type="submit" className="btn-submit" disabled={isSaving}>

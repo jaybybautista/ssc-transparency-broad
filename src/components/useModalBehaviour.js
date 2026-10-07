@@ -29,6 +29,25 @@ const useModalBehaviour = (isOpen, onClose, containerRef) => {
   // Where focus was before the dialog opened, so it can be handed back.
   const previouslyFocused = useRef(null);
 
+  /*
+   * `onClose` is held in a ref rather than depended on directly.
+   *
+   * Every call site passes an inline arrow — `() => setShowAdminModal(false)` —
+   * so its identity changes on every render of the page that owns the dialog.
+   * With it in the dependency array, typing a single character into any admin
+   * form re-ran this whole effect: the cleanup handed focus back to the button
+   * that opened the dialog, and the re-run then pulled focus to the first
+   * control inside it, the close button. One keystroke and the caret was gone.
+   *
+   * Fixing it here rather than asking ten call sites to wrap their handler in
+   * useCallback: a hook that silently misbehaves unless every caller memoises
+   * its arguments is a trap, and the next form added would fall into it too.
+   */
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     if (!isOpen) return undefined;
 
@@ -36,7 +55,7 @@ const useModalBehaviour = (isOpen, onClose, containerRef) => {
 
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        onClose?.();
+        onCloseRef.current?.();
         return;
       }
 
@@ -82,7 +101,12 @@ const useModalBehaviour = (isOpen, onClose, containerRef) => {
       // Hand focus back to whatever opened the dialog.
       previouslyFocused.current?.focus?.();
     };
-  }, [isOpen, onClose, containerRef]);
+    // Deliberately only `isOpen`. `onClose` is read through the ref above, and
+    // `containerRef` is a useRef object, whose identity is stable for the life
+    // of the dialog. Adding either back makes this effect tear down and rebuild
+    // on every keystroke, which is the bug described above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 };
 
 export default useModalBehaviour;

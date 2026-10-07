@@ -14,8 +14,8 @@ import {
 } from 'react-icons/fi';
 import { FaFacebookF } from 'react-icons/fa';
 import { SiGmail } from 'react-icons/si';
-import { contactInfo } from '../data/sampleData';
 import { useData, TICKET_TYPES, SUGGESTION_CATEGORIES } from '../context/DataContext';
+import { SOCIAL_BASES, socialUrl } from '../lib/siteProfile';
 import { useDialog } from '../components/DialogProvider';
 import { useLanguage } from '../context/LanguageContext';
 import './ContactUs.css';
@@ -50,7 +50,7 @@ const EMPTY_TICKET = {
 
 const ContactUs = () => {
   const { t } = useLanguage();
-  const { createTicket, lookupTicket, createSuggestion } = useData();
+  const { createTicket, lookupTicket, createSuggestion, siteProfile } = useData();
   const { notify } = useDialog();
 
   const [activeTab, setActiveTab] = useState('ticket');
@@ -143,7 +143,7 @@ const ContactUs = () => {
         <div className="page-header-content container">
           <h1>{t('contact.title')}</h1>
           <p>
-            Send the council an inquiry, a venue or equipment request, or a formal grievance — or drop an
+            Send the council an inquiry, a venue or equipment request, or a formal grievance, or drop an
             anonymous suggestion. Every submission reaches the SSC directly.
           </p>
         </div>
@@ -174,7 +174,7 @@ const ContactUs = () => {
                 <div className="portal-success">
                   <FiCheckCircle className="portal-success-icon" />
                   <h3>Submission received</h3>
-                  <p>Keep this reference code — you'll need it to check the status of your request.</p>
+                  <p>Keep this reference code, you'll need it to check the status of your request.</p>
                   <div className="reference-code">
                     <code>{submittedCode}</code>
                     <button type="button" onClick={copyCode} title="Copy reference code">
@@ -182,7 +182,7 @@ const ContactUs = () => {
                     </button>
                   </div>
                   <p className="portal-success-note">
-                    The council reviews submissions during office hours. Save the code somewhere safe —
+                    The council reviews submissions during office hours. Save the code somewhere safe,
                     it is the only way to look this up later.
                   </p>
                   <button type="button" className="btn btn-outline" onClick={() => setSubmittedCode('')}>
@@ -300,7 +300,7 @@ const ContactUs = () => {
               {suggestionSent ? (
                 <div className="portal-success">
                   <FiCheckCircle className="portal-success-icon" />
-                  <h3>Thank you — your suggestion was sent anonymously</h3>
+                  <h3>Thank you, your suggestion was sent anonymously</h3>
                   <p>
                     Nothing identifying was recorded, so there is no reference code and no way to trace
                     this back to you. That also means the council cannot reply directly.
@@ -316,7 +316,7 @@ const ContactUs = () => {
                     <div>
                       <strong>This is genuinely anonymous.</strong>
                       <span>
-                        No name, email or account is attached — and no sign-in is required. Because of
+                        No name, email or account is attached, and no sign-in is required. Because of
                         that, the council cannot reply to you, so use the Submit a Request tab if you
                         need an answer.
                       </span>
@@ -439,7 +439,7 @@ const ContactUs = () => {
               </div>
               <div className="info-content">
                 <h4>{t('contact.office')}</h4>
-                <p>{contactInfo.office}</p>
+                <p>{siteProfile.officeAddress}</p>
               </div>
             </div>
 
@@ -449,7 +449,7 @@ const ContactUs = () => {
               </div>
               <div className="info-content">
                 <h4>{t('contact.email')}</h4>
-                <p>{contactInfo.email}</p>
+                <p>{siteProfile.email}</p>
               </div>
             </div>
 
@@ -459,7 +459,7 @@ const ContactUs = () => {
               </div>
               <div className="info-content">
                 <h4>{t('contact.phone')}</h4>
-                <p>{contactInfo.phone}</p>
+                <p>{siteProfile.phone}</p>
               </div>
             </div>
 
@@ -469,7 +469,7 @@ const ContactUs = () => {
               </div>
               <div className="info-content">
                 <h4>{t('contact.hours')}</h4>
-                <p>{contactInfo.officeHours}</p>
+                <p>{siteProfile.officeHours}</p>
               </div>
             </div>
           </div>
@@ -477,12 +477,22 @@ const ContactUs = () => {
           <div className="social-section">
             <h4>{t('contact.connect')}</h4>
             <div className="social-links">
-              <a href="https://facebook.com/PSUurdanetaSSC" className="social-link facebook" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
-                <FaFacebookF />
-              </a>
-              <a href="mailto:ssc.urdanetacampus@psu.edu.ph" className="social-link gmail" aria-label="Gmail">
-                <SiGmail />
-              </a>
+              {!!siteProfile.facebook && (
+                <a
+                  href={socialUrl(siteProfile.facebook, SOCIAL_BASES.facebook)}
+                  className="social-link facebook"
+                  aria-label="Facebook"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <FaFacebookF />
+                </a>
+              )}
+              {!!siteProfile.email && (
+                <a href={`mailto:${siteProfile.email}`} className="social-link gmail" aria-label="Email">
+                  <SiGmail />
+                </a>
+              )}
             </div>
           </div>
         </div>

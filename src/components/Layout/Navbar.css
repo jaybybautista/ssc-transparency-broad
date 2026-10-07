@@ -270,8 +270,7 @@
 }
 
 .connect-btn,
-.admin-btn,
-.return-user-btn {
+.admin-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
@@ -307,18 +306,6 @@
   background: var(--gray-100);
   color: var(--gray-800);
   border-color: var(--gray-400);
-}
-
-.return-user-btn {
-  background: var(--status-approved);
-  color: #fff;
-  border: none;
-  cursor: pointer;
-}
-
-.return-user-btn:hover {
-  filter: brightness(0.93);
-  transform: translateY(-1px);
 }
 
 .mobile-menu-btn {
@@ -388,13 +375,11 @@
 }
 
 @media (max-width: 900px) {
-  .connect-btn span,
-  .return-user-btn span {
+  .connect-btn span {
     display: none;
   }
 
-  .connect-btn,
-  .return-user-btn {
+  .connect-btn {
     width: var(--nav-control-h);
     padding: 0;
     justify-content: center;

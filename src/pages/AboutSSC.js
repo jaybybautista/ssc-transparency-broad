@@ -1,31 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { FiTarget, FiHeart, FiStar, FiCheckCircle, FiMail } from 'react-icons/fi';
-import { missionVision } from '../data/sampleData';
+import React from 'react';
+import { FiTarget, FiHeart, FiStar, FiCheckCircle } from 'react-icons/fi';
 import { useData } from '../context/DataContext';
-import OfficerAvatar from '../components/OfficerAvatar';
-import ViewToggle from '../components/ViewToggle';
+import OfficerDirectory from '../components/OfficerDirectory';
 import '../components/OfficerListView.css';
 import { useLanguage } from '../context/LanguageContext';
 import './AboutSSC.css';
 
-const DIVISIONS = [
-  'Core Officers',
-  'SSC Advisers',
-  'SSC Secretaries',
-  'Executive Department',
-  'Legislative Department',
-  'Executive Committees'
-];
-
 const AboutSSC = () => {
   const { t } = useLanguage();
-  const { officers } = useData();
-  const [viewMode, setViewMode] = useState(() => localStorage.getItem('officersViewMode') || 'grid');
-
-  useEffect(() => {
-    localStorage.setItem('officersViewMode', viewMode);
-  }, [viewMode]);
-
+  const { officers, siteProfile, selectedYear } = useData();
   return (
     <div className="about-ssc-page">
       <div className="page-header">
@@ -43,7 +26,7 @@ const AboutSSC = () => {
               <FiTarget />
             </div>
             <h2>{t('about.vision')}</h2>
-            <p>{missionVision.vision}</p>
+            <p>{siteProfile.vision}</p>
           </div>
           
           <div className="mv-card mission-card">
@@ -51,7 +34,7 @@ const AboutSSC = () => {
               <FiStar />
             </div>
             <h2>{t('about.mission')}</h2>
-            <p>{missionVision.mission}</p>
+            <p>{siteProfile.mission}</p>
           </div>
         </div>
 
@@ -62,7 +45,7 @@ const AboutSSC = () => {
             {t('about.values')}
           </h2>
           <div className="values-grid">
-            {missionVision.coreValues.map((value, index) => (
+            {siteProfile.coreValues.map((value, index) => (
               <div key={index} className="value-card" style={{ animationDelay: `${index * 0.1}s` }}>
                 <h3>{value.title}</h3>
                 <p>{value.description}</p>
@@ -78,7 +61,7 @@ const AboutSSC = () => {
             {t('about.goals')}
           </h2>
           <div className="goals-list">
-            {missionVision.goals.map((goal, index) => (
+            {siteProfile.goals.map((goal, index) => (
               <div key={index} className="goal-item" style={{ animationDelay: `${index * 0.1}s` }}>
                 <span className="goal-number">{index + 1}</span>
                 <p>{goal}</p>
@@ -97,51 +80,11 @@ const AboutSSC = () => {
             Get to know the dedicated student leaders who serve and represent the student body with passion and commitment.
           </p>
 
-          {!!officers.length && (
-            <div className="view-toolbar">
-              <span className="view-toolbar-count">
-                {officers.length} officer{officers.length === 1 ? '' : 's'}
-              </span>
-              <ViewToggle value={viewMode} onChange={setViewMode} />
-            </div>
-          )}
-
-          {/* Officers Grid by division */}
-          {DIVISIONS.map((division) => {
-            const divisionOfficers = officers.filter((officer) => (officer.division || 'Core Officers') === division);
-            if (!divisionOfficers.length) {
-              return null;
-            }
-
-            return (
-              <div key={division} className="division-section">
-                <h3 className="division-title">{division}</h3>
-                <div className={`officers-grid ${viewMode === 'list' ? 'is-list' : ''}`}>
-                  {divisionOfficers.map((officer, index) => (
-                    <div key={officer.id} className="officer-card" style={{ animationDelay: `${index * 0.05}s` }}>
-                      <div className="officer-image">
-                        <OfficerAvatar src={officer.image} alt={officer.name} />
-                        {officer.email && (
-                          <div className="officer-overlay">
-                            <a href={`mailto:${officer.email}`} className="overlay-btn" title={`Email ${officer.name}`}>
-                              <FiMail />
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                      <div className="officer-info">
-                        <span className="officer-position">{officer.position}</span>
-                        <h3 className="officer-name">{officer.name}</h3>
-                        {officer.course && <p className="officer-course">{officer.course}</p>}
-                        {officer.yearLevel && <p className="officer-year">{officer.yearLevel}</p>}
-                        {officer.quote && <p className="officer-quote">"{officer.quote}"</p>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+          <OfficerDirectory
+            officers={officers}
+            orgChartUrl={siteProfile.orgChartUrl}
+            academicYear={selectedYear}
+          />
         </section>
 
         {/* Message from SSC */}

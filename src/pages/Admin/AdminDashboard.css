@@ -4,158 +4,11 @@
   background: var(--gray-50);
 }
 
-/* Sidebar Styles */
-.admin-sidebar {
-  width: 260px;
-  background: var(--primary-900);
-  color: var(--white);
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  z-index: 100;
-}
-
-.sidebar-header {
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.admin-logo {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  object-fit: contain;
-  background: var(--surface);
-  padding: 2px;
-}
-
-.admin-title {
-  font-weight: 600;
-  font-size: 1rem;
-  color: rgb(255, 240, 240);
-}
-
-.sidebar-nav {
-  flex: 1;
-  padding: 1rem 0;
-  overflow-y: auto;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 0.875rem 1.5rem;
-  background: none;
-  border: none;
-  color: var(--gray-400);
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all var(--transition-normal);
-  text-align: left;
-}
-
-.nav-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
-}
-
-.nav-item.active {
-  background: rgba(37, 99, 235, 0.2);
-  color: var(--primary-400);
-  border-right: 3px solid var(--primary-500);
-}
-
-.nav-item svg {
-  font-size: 1.1rem;
-  flex-shrink: 0;
-}
-
-.sidebar-footer {
-  padding: 1rem 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.logout-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background: rgba(220, 38, 38, 0.1);
-  border: 1px solid rgba(220, 38, 38, 0.2);
-  border-radius: var(--radius-md);
-  color: #ef4444;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all var(--transition-normal);
-}
-
-.logout-btn:hover {
-  background: rgba(220, 38, 38, 0.2);
-}
-
-/* Main Content Area */
-.admin-main {
-  flex: 1;
-  margin-left: 260px;
-  display: flex;
-  flex-direction: column;
-}
-
-.admin-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 2rem;
-  background: var(--primary-900);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  position: sticky;
-  top: 0;
-  z-index: 50;
-}
-
-.admin-header h1 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.admin-user {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.user-avatar {
-  width: 36px;
-  height: 36px;
-  background: var(--gradient-primary);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  color: var(--white);
-}
-
-.user-name {
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
-}
-
 .admin-content {
   flex: 1;
   padding: 2rem;
   overflow-y: auto;
-  background: linear-gradient(180deg, #f8fbff 0%, #f3f6fb 100%);
+  background: var(--admin-canvas);
 }
 
 /* Dashboard Content */
@@ -184,8 +37,18 @@
   margin-bottom: 2rem;
 }
 
-.stat-card {
-  background: var(--white);
+/* ------------------------------------------------------------------
+   Scoped on purpose.
+
+   .stat-card, .section-card and .section-header are also used by the public
+   pages (SSC, Home, About). Two unrelated components sharing a class name let
+   the cascade decide by stylesheet order instead of by intent: the dashboard
+   card was picking up the public card's background, which is part of why dark
+   mode looked half-applied here. The .admin-dashboard prefix keeps these to
+   the dashboard.
+   ------------------------------------------------------------------ */
+.admin-dashboard .stat-card {
+  background: var(--surface);
   border-radius: var(--radius-xl);
   padding: 1.5rem;
   display: flex;
@@ -247,14 +110,14 @@
   margin-bottom: 2rem;
 }
 
-.section-card {
-  background: var(--white);
+.admin-dashboard .section-card {
+  background: var(--surface);
   border-radius: var(--radius-xl);
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
 }
 
-.section-header {
+.admin-dashboard .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -263,7 +126,7 @@
   border-bottom: 1px solid var(--gray-100);
 }
 
-.section-header h3 {
+.admin-dashboard .section-header h3 {
   font-size: 1rem;
   font-weight: 600;
   color: var(--gray-800);
@@ -279,7 +142,7 @@
 }
 
 .btn-text:hover {
-  text-decoration: underline;
+  color: var(--accent-text-strong);
 }
 
 .section-list {
@@ -332,7 +195,7 @@
 .status-dot.status-approved { background: #22c55e; }
 
 .quick-actions {
-  background: var(--white);
+  background: var(--surface);
   border-radius: var(--radius-xl);
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
@@ -382,7 +245,7 @@
 
 /* Manager Content */
 .manager-content {
-  background: var(--white);
+  background: var(--surface);
   border-radius: var(--radius-xl);
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
@@ -408,7 +271,7 @@
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
   background: var(--gradient-primary);
-  color: var(--white);
+  color: #fff;
   border: none;
   border-radius: var(--radius-lg);
   font-size: 0.875rem;
@@ -427,7 +290,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
-  background: var(--white);
+  background: var(--surface);
   color: var(--gray-700);
   border: 1px solid var(--gray-300);
   border-radius: var(--radius-lg);
@@ -478,7 +341,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  background: var(--white);
+  background: var(--surface);
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-lg);
   font-size: 0.875rem;
@@ -642,7 +505,7 @@
 }
 
 .modal-content {
-  background: var(--white);
+  background: var(--surface);
   border-radius: var(--radius-xl);
   width: 100%;
   max-width: 620px;
@@ -660,7 +523,7 @@
   border-bottom: 1px solid var(--gray-100);
   position: sticky;
   top: 0;
-  background: var(--white);
+  background: var(--surface);
   z-index: 2;
 }
 
@@ -800,84 +663,12 @@
 }
 
 @media (max-width: 992px) {
-  .admin-sidebar {
-    width: 80px;
-  }
-
-  .sidebar-header {
-    justify-content: center;
-    padding: 1rem;
-  }
-
-  .admin-title {
-    display: none;
-  }
-
-  .nav-item span,
-  .logout-btn span {
-    display: none;
-  }
-
-  .nav-item,
-  .logout-btn {
-    justify-content: center;
-    padding: 1rem;
-  }
-
-  .admin-main {
-    margin-left: 80px;
-  }
-
   .dashboard-sections {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 768px) {
-  /* Sidebar becomes an off-canvas drawer opened by the header menu button */
-  .admin-sidebar {
-    width: 270px;
-    transform: translateX(-100%);
-    transition: transform 0.25s ease;
-    box-shadow: 4px 0 24px rgba(15, 23, 42, 0.25);
-    z-index: 1300;
-  }
-
-  .admin-sidebar.open {
-    transform: translateX(0);
-  }
-
-  /* Restore the labels hidden by the 992px icon-rail rules */
-  .admin-sidebar .admin-title,
-  .admin-sidebar .nav-item span,
-  .admin-sidebar .logout-btn span {
-    display: inline;
-  }
-
-  .admin-sidebar .sidebar-header {
-    justify-content: flex-start;
-    padding: 1.25rem 1rem;
-  }
-
-  .admin-sidebar .nav-item,
-  .admin-sidebar .logout-btn {
-    justify-content: flex-start;
-    padding: 0.9rem 1.25rem;
-  }
-
-  .admin-sidebar-overlay.active {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .admin-main {
-    margin-left: 0;
-  }
-
-  .admin-header {
-    padding: 1rem;
-  }
-
   .admin-content {
     padding: 1rem;
   }
@@ -906,71 +697,6 @@
   }
 }
 
-/* ---------------------------------------------------------------
-   Mobile drawer chrome (hidden on desktop, shown ≤768px)
-   --------------------------------------------------------------- */
-.admin-menu-btn,
-.sidebar-close-btn {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  cursor: pointer;
-}
-
-.admin-menu-btn {
-  width: 40px;
-  height: 40px;
-  margin-right: 0.75rem;
-  border-radius: var(--radius-md, 8px);
-  background: var(--gray-100);
-  color: var(--gray-700);
-  font-size: 1.25rem;
-  flex-shrink: 0;
-}
-
-.admin-menu-btn:hover {
-  background: var(--gray-200);
-}
-
-.sidebar-close-btn {
-  width: 34px;
-  height: 34px;
-  margin-left: auto;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  font-size: 1.05rem;
-  flex-shrink: 0;
-}
-
-.sidebar-close-btn:hover {
-  background: rgba(255, 255, 255, 0.24);
-}
-
-.admin-sidebar-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1250;
-  background: rgba(15, 23, 42, 0.55);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.25s ease;
-}
-
-/* The admin header needs to sit above content and keep the menu reachable */
-.admin-header .header-left {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-}
-
-.admin-header .header-left h1 {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* Wide tables (votes, announcements, events) scroll instead of breaking layout */
 .data-table {
   overflow-x: auto;
@@ -990,21 +716,5 @@
 
   .manager-header .btn-primary {
     justify-content: center;
-  }
-
-  .admin-header .header-left h1 {
-    font-size: 1.15rem;
-  }
-
-  .admin-user .user-name {
-    display: none;
-  }
-}
-
-/* Must come after the base `display: none` above to win the cascade */
-@media (max-width: 768px) {
-  .admin-menu-btn,
-  .sidebar-close-btn {
-    display: inline-flex;
   }
 }

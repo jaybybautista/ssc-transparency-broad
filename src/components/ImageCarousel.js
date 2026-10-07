@@ -110,7 +110,7 @@ const ImageCarousel = ({ images = [], alt = 'Image', className = '' }) => {
           className="carousel-stage"
           role="group"
           aria-roledescription="carousel"
-          aria-label={`${alt} — ${total} image${total === 1 ? '' : 's'}`}
+          aria-label={`${alt}, ${total} image${total === 1 ? '' : 's'}`}
           onKeyDown={handleCarouselKey}
         >
           {/* A button rather than a clickable <img>: an image with an onClick
@@ -123,7 +123,7 @@ const ImageCarousel = ({ images = [], alt = 'Image', className = '' }) => {
           >
             <img
               src={photos[index]}
-              alt={`${alt} — ${index + 1} of ${total}`}
+              alt={`${alt}, ${index + 1} of ${total}`}
               className="carousel-image"
             />
           </button>
@@ -200,7 +200,7 @@ const ImageCarousel = ({ images = [], alt = 'Image', className = '' }) => {
           ref={lightboxRef}
           role="dialog"
           aria-modal="true"
-          aria-label={`${alt} — image ${index + 1} of ${total}`}
+          aria-label={`${alt}, image ${index + 1} of ${total}`}
         >
           <div className="lightbox-toolbar" onClick={(e) => e.stopPropagation()}>
             <span className="lightbox-counter">

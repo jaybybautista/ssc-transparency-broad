@@ -11,10 +11,10 @@ const choiceMeta = {
 };
 
 const formatWhen = (value) => {
-  if (!value) return '—';
+  if (!value) return 'N/A';
   // Firestore Timestamp or an ISO string / Date
   const date = typeof value?.toDate === 'function' ? value.toDate() : new Date(value);
-  if (Number.isNaN(date.getTime())) return '—';
+  if (Number.isNaN(date.getTime())) return 'N/A';
   return date.toLocaleString('en-US', {
     year: 'numeric',
     month: 'short',
@@ -137,7 +137,7 @@ const ResolutionVoters = () => {
           <option value="all">All resolutions</option>
           {resolutions.map((resolution) => (
             <option key={resolution.id} value={String(resolution.id)}>
-              {resolution.number ? `${resolution.number} — ` : ''}
+              {resolution.number ? `${resolution.number}: ` : ''}
               {resolution.title}
             </option>
           ))}

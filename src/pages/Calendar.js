@@ -11,16 +11,36 @@ import RichTextEditor from '../components/RichTextEditor';
 import AddToCalendar from '../components/AddToCalendar';
 import CalendarSyncPanel from '../components/CalendarSyncPanel';
 import { useLanguage } from '../context/LanguageContext';
+import { academicYearOf } from '../lib/academicYear';
 import './Calendar.css';
+
+/**
+ * A local YYYY-MM-DD key for a date.
+ *
+ * Event dates are stored as plain 'YYYY-MM-DD' strings, and comparing them as
+ * strings is both correct and timezone-proof. Comparing them as Date objects is
+ * not: `new Date('2026-08-27')` parses as UTC midnight, which in Manila is 8am
+ * the same day, so an activity happening TODAY tested as already past from 8am
+ * onward and disappeared from Upcoming — on the very day students needed it.
+ */
+const toDateKey = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 const Calendar = () => {
   const { t } = useLanguage();
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
-  const { events, createEvent, updateEvent, deleteEvent, getViewCount: getSharedViewCount, trackView} = useData();
+  const { events, createEvent, updateEvent, deleteEvent, getViewCount: getSharedViewCount, trackView, selectedYear, setSelectedYear, isYearScoped, hasChosenYear } = useData();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
+  // Which list the sidebar shows when no single date is picked.
+  const [listView, setListView] = useState('upcoming');
+  const [showAll, setShowAll] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -76,7 +96,7 @@ const Calendar = () => {
   const handleDelete = async (id) => {
     const shouldDelete = await confirm({
       title: 'Delete event?',
-      message: 'This event will be permanently removed. This cannot be undone.',
+      message: 'This event comes off the site right away. You will have a few seconds to undo it.',
       confirmLabel: 'Delete',
       tone: 'danger'
     });
@@ -86,6 +106,17 @@ const Calendar = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Checked explicitly rather than left to the inputs' `required` attribute:
+    // that native validation bubble anchors unreliably on a field inside a
+    // fixed, scrolling modal like this one, so a blank title or date could
+    // silently block the submit with no visible message — indistinguishable
+    // from the button doing nothing at all.
+    if (!formData.title.trim() || !formData.date) {
+      notify('Please give the event a title and a date before saving.');
+      return;
+    }
+
     setIsSaving(true);
 
     let uploadedUrls = [];
@@ -118,6 +149,25 @@ const Calendar = () => {
       }
       setShowAdminModal(false);
       setEditItem(null);
+
+      // The calendar only ever queries the selected academic year (Aug-Jul),
+      // scoped server-side by date range. Saving an event outside that window
+      // — the most common case being an admin setting up next year's first
+      // activity before the incoming council's year has formally started —
+      // used to leave the view showing no change at all: the write succeeded,
+      // but nothing the admin could see reflected it, which reads exactly like
+      // the button did nothing. Jumping the view to match fixes that, and
+      // saying so explicitly covers the one case a silent jump would still
+      // confuse: switching away from the year everyone else currently sees.
+      const eventYear = academicYearOf(payload.date);
+      if (eventYear && eventYear !== selectedYear) {
+        setSelectedYear(eventYear);
+        const [y, m, d] = payload.date.split('-').map(Number);
+        setCurrentDate(new Date(y, m - 1, d));
+        notify(`Saved. This date falls in A.Y. ${eventYear}, so the calendar has switched to show it.`);
+      } else {
+        notify('Event saved.');
+      }
     } catch (error) {
       console.error(error);
       notify('Saving failed: ' + error.message + '\n\nPlease check Firebase setup/rules and try again.');
@@ -142,6 +192,32 @@ const Calendar = () => {
     setModalOpen(false);
     setSelectedEvent(null);
   };
+
+  /*
+   * The other half of goToMonth: picking a year in the footer switcher moves
+   * the grid to that year. Without this the year changed underneath a month
+   * that no longer belonged to it, and the calendar showed an empty grid for a
+   * year that in fact had events.
+   *
+   * Depends only on selectedYear so it reacts to the switcher, not to ordinary
+   * month paging — which goToMonth is already keeping consistent.
+   */
+  useEffect(() => {
+    // Only a deliberate pick moves the grid. On load the board settles onto its
+    // default year asynchronously, and treating that as a pick would yank the
+    // calendar off today's month every time the page opened.
+    if (!isYearScoped || !hasChosenYear || !selectedYear) return;
+    setCurrentDate((current) => {
+      if (academicYearOf(current) === selectedYear) return current;
+      const startYear = Number(String(selectedYear).split('-')[0]);
+      if (Number.isNaN(startYear)) return current;
+      const today = new Date();
+      // Land on today when the chosen year is the one we are living in, so the
+      // common case does not send you to August of a year already half over.
+      return academicYearOf(today) === selectedYear ? today : new Date(startYear, 7, 1);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedYear]);
 
   const statusOptions = [
     { value: 'all', label: t('cal.allStatus'), color: null },
@@ -212,10 +288,8 @@ const Calendar = () => {
   };
 
   const getEventsForDate = (date) => {
-    return events.filter(event => {
-      const eventDate = new Date(event.date);
-      return eventDate.toDateString() === date.toDateString();
-    });
+    const key = toDateKey(date);
+    return events.filter((event) => event.date === key);
   };
 
   const getFilteredEvents = () => {
@@ -237,6 +311,26 @@ const Calendar = () => {
     return `${year}-${month}-${day}`;
   };
 
+  /**
+   * Moves the browsed month, keeping the academic year in step with it.
+   *
+   * The grid lets anyone page into any month, but only the selected academic
+   * year's events are ever fetched. Those two facts contradicted each other:
+   * browsing to September 2026 while the board sat on A.Y. 2025-2026 showed an
+   * empty month, with no hint that the events existed and were simply not
+   * being asked for. Following the month is the honest behaviour — you asked to
+   * look at that month, so load what is in it.
+   *
+   * Admins are never scoped (see DataContext), so their view already holds
+   * every year and there is nothing to switch.
+   */
+  const goToMonth = (date) => {
+    setCurrentDate(date);
+    if (!isYearScoped) return;
+    const year = academicYearOf(date);
+    if (year && year !== selectedYear) setSelectedYear(year);
+  };
+
   const handleDatePick = (value) => {
     if (!value) {
       setSelectedDate(null);
@@ -244,19 +338,19 @@ const Calendar = () => {
     }
     const [year, month, day] = value.split('-').map(Number);
     setSelectedDate(new Date(year, month - 1, day));
-    setCurrentDate(new Date(year, month - 1, 1));
+    goToMonth(new Date(year, month - 1, 1));
   };
 
   const prevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+    goToMonth(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   };
 
   const nextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    goToMonth(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
 
   const goToToday = () => {
-    setCurrentDate(new Date());
+    goToMonth(new Date());
   };
 
   const getStatusClass = (status) => {
@@ -268,9 +362,75 @@ const Calendar = () => {
     }
   };
 
+  /** How many of a list to show before "Show all". */
+  const COLLAPSED_COUNT = 5;
+
+  /*
+   * One card renderer for all three lists.
+   *
+   * This markup was duplicated for the selected-date list and the upcoming
+   * list; adding a third copy for past activities is how the two quietly drift
+   * apart, so it lives in one place instead.
+   */
+  const renderEventCard = (event, { showDate = false } = {}) => (
+    <div key={event.id} className={`event-card ${event.date < todayKey ? 'is-past' : ''}`}>
+      <div className="event-card-content" onClick={() => openModal(event)}>
+        {showDate && (
+          <div className="event-date-small">
+            {new Date(`${event.date}T00:00:00`).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric'
+            })}
+          </div>
+        )}
+        <div className="event-card-header">
+          <span className={`event-status ${getStatusClass(event.status)}`}>{event.status}</span>
+          <span className="event-views">
+            <FiEye /> {getViewCount(event.id)}
+          </span>
+        </div>
+        <h4>{event.title}</h4>
+        <p>{event.description}</p>
+        <div className="event-meta">
+          <span><FiClock /> {event.time}</span>
+          <span><FiMapPin /> {event.location}</span>
+        </div>
+        <button className="see-more-btn">{t('common.seeMore')}</button>
+      </div>
+      {isAdmin && (
+        <div className="admin-actions">
+          <button className="admin-edit-btn" onClick={(e) => { e.stopPropagation(); handleEdit(event); }}>
+            <FiEdit2 />
+          </button>
+          <button className="admin-delete-btn" onClick={(e) => { e.stopPropagation(); handleDelete(event.id); }}>
+            <FiTrash2 />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
   const days = getDaysInMonth(currentDate);
   const filteredEvents = getFilteredEvents();
-  const upcomingEvents = filteredEvents.filter(e => new Date(e.date) >= new Date());
+  /*
+   * Split by whole day, not by the moment.
+   *
+   * An activity is "upcoming" for the whole of the day it happens on: a
+   * student checking at lunchtime should still see this afternoon's programme,
+   * not find it filed under Past.
+   */
+  const todayKey = toDateKey(new Date());
+  const upcomingEvents = filteredEvents
+    .filter((e) => e.date >= todayKey)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const pastEvents = filteredEvents
+    .filter((e) => e.date < todayKey)
+    // Most recent first: what just happened is what students look for.
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  const dayEvents = selectedDate ? getEventsForDate(selectedDate) : [];
+  const activeList = listView === 'past' ? pastEvents : upcomingEvents;
+  const visibleEvents = showAll ? activeList : activeList.slice(0, COLLAPSED_COUNT);
 
   // Handed to useModalBehaviour so Tab stays inside the dialog.
   const adminModalRef = useRef(null);
@@ -368,10 +528,11 @@ const Calendar = () => {
           <div className="events-sidebar">
             <div className="sidebar-header">
               <h3>
-                {selectedDate 
+                {selectedDate
                   ? selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-                  : t('cal.upcoming')
-                }
+                  : listView === 'past'
+                    ? t('cal.pastTitle')
+                    : t('cal.upcoming')}
               </h3>
               <div className="filter-dropdown" ref={dropdownRef}>
                 <button 
@@ -417,6 +578,30 @@ const Calendar = () => {
               </div>
             </div>
 
+            {!selectedDate && (
+              <div className="events-tabs" role="tablist" aria-label="Which activities to show">
+                {[
+                  ['upcoming', t('cal.upcomingShort'), upcomingEvents.length],
+                  ['past', t('cal.past'), pastEvents.length]
+                ].map(([key, label, count]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    aria-selected={listView === key}
+                    className={`events-tab ${listView === key ? 'active' : ''}`}
+                    onClick={() => {
+                      setListView(key);
+                      setShowAll(false);
+                    }}
+                  >
+                    {label}
+                    <span className="events-tab-count">{count}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div className="sidebar-datepicker">
               <label htmlFor="calendar-date-picker">
                 <FiCalendar /> {t('cal.jumpToDate')}
@@ -450,78 +635,32 @@ const Calendar = () => {
 
             <div className="events-list">
               {selectedDate ? (
-                getEventsForDate(selectedDate).length > 0 ? (
-                  getEventsForDate(selectedDate).map(event => (
-                    <div key={event.id} className="event-card">
-                      <div className="event-card-content" onClick={() => openModal(event)}>
-                        <div className="event-card-header">
-                          <span className={`event-status ${getStatusClass(event.status)}`}>
-                            {event.status}
-                          </span>
-                          <span className="event-views">
-                            <FiEye /> {getViewCount(event.id)}
-                          </span>
-                        </div>
-                        <h4>{event.title}</h4>
-                        <p>{event.description}</p>
-                        <div className="event-meta">
-                          <span><FiClock /> {event.time}</span>
-                          <span><FiMapPin /> {event.location}</span>
-                        </div>
-                        <button className="see-more-btn">{t('common.seeMore')}</button>
-                      </div>
-                      {isAdmin && (
-                        <div className="admin-actions">
-                          <button className="admin-edit-btn" onClick={(e) => { e.stopPropagation(); handleEdit(event); }}>
-                            <FiEdit2 />
-                          </button>
-                          <button className="admin-delete-btn" onClick={(e) => { e.stopPropagation(); handleDelete(event.id); }}>
-                            <FiTrash2 />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))
+                dayEvents.length > 0 ? (
+                  dayEvents.map((event) => renderEventCard(event))
                 ) : (
                   <div className="no-events">
                     <p>{t('cal.noneOnDate')}</p>
                   </div>
                 )
+              ) : visibleEvents.length > 0 ? (
+                <>
+                  {visibleEvents.map((event) => renderEventCard(event, { showDate: true }))}
+                  {activeList.length > COLLAPSED_COUNT && (
+                    <button
+                      type="button"
+                      className="events-show-more"
+                      onClick={() => setShowAll((prev) => !prev)}
+                    >
+                      {showAll
+                        ? t('cal.showLess')
+                        : `${t('cal.showAll')} (${activeList.length})`}
+                    </button>
+                  )}
+                </>
               ) : (
-                upcomingEvents.slice(0, 5).map(event => (
-                  <div key={event.id} className="event-card">
-                    <div className="event-card-content" onClick={() => openModal(event)}>
-                      <div className="event-date-small">
-                        {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      </div>
-                      <div className="event-card-header">
-                        <span className={`event-status ${getStatusClass(event.status)}`}>
-                          {event.status}
-                        </span>
-                        <span className="event-views">
-                          <FiEye /> {getViewCount(event.id)}
-                        </span>
-                      </div>
-                      <h4>{event.title}</h4>
-                      <p>{event.description}</p>
-                      <div className="event-meta">
-                        <span><FiClock /> {event.time}</span>
-                        <span><FiMapPin /> {event.location}</span>
-                      </div>
-                      <button className="see-more-btn">{t('common.seeMore')}</button>
-                    </div>
-                    {isAdmin && (
-                      <div className="admin-actions">
-                        <button className="admin-edit-btn" onClick={(e) => { e.stopPropagation(); handleEdit(event); }}>
-                          <FiEdit2 />
-                        </button>
-                        <button className="admin-delete-btn" onClick={(e) => { e.stopPropagation(); handleDelete(event.id); }}>
-                          <FiTrash2 />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))
+                <div className="no-events">
+                  <p>{listView === 'past' ? t('cal.noPast') : t('cal.noUpcoming')}</p>
+                </div>
               )}
             </div>
           </div>
@@ -610,7 +749,6 @@ const Calendar = () => {
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
                 />
               </div>
               <div className="form-group">
@@ -619,7 +757,6 @@ const Calendar = () => {
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  required
                 />
               </div>
               <div className="form-group">

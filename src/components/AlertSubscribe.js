@@ -218,7 +218,7 @@ const AlertSubscribe = ({ onClose }) => {
                       className="form-input"
                       value={emailForm.program}
                       onChange={(e) => setEmailForm({ ...emailForm, program: e.target.value })}
-                      placeholder="BSIT — 3rd Year"
+                      placeholder="BSIT 3rd Year"
                     />
                   </div>
                 </div>

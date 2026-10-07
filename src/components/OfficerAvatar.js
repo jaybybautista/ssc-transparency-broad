@@ -21,7 +21,7 @@ const OfficerAvatar = ({ src, alt }) => {
   }
 
   return (
-    <div className="officer-image-fallback" role="img" aria-label={`${alt || 'Officer'} — no photo available`}>
+    <div className="officer-image-fallback" role="img" aria-label={`${alt || 'Officer'}, no photo available`}>
       <FiUser />
     </div>
   );

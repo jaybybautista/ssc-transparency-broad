@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FiArchive, FiCalendar, FiCheck, FiInfo, FiAlertTriangle } from 'react-icons/fi';
 import { useData } from '../../context/DataContext';
 import { useDialog } from '../../components/DialogProvider';
-import { academicYearOf, formatAcademicYear } from '../../lib/academicYear';
+import { formatAcademicYear } from '../../lib/academicYear';
 import './AcademicYearSettings.css';
 
 /**
@@ -34,8 +34,18 @@ const AcademicYearSettings = () => {
   const { confirm, notify } = useDialog();
   const [isSaving, setIsSaving] = useState(false);
 
-  // The calendar's opinion, offered as a suggestion rather than imposed.
-  const derived = academicYearOf(new Date());
+  /*
+   * The term after the sitting one. Worked out from the declared year, never
+   * from the calendar.
+   *
+   * This page used to also compute the calendar's year and, whenever the two
+   * differed, print "by the calendar it is now A.Y. 2026-2027" above a primary
+   * button offering to move there. In September the clock says 2026-2027 while
+   * the council serving is 2025-2026, so the most prominent control on the page
+   * invited an admin to hand over to a term that has held no election and has
+   * no officers. The rest of the system refuses to infer a handover; this
+   * screen was quietly doing it anyway, in the loudest place available.
+   */
   const [startYear] = String(currentYear).split('-').map(Number);
   const nextYear = `${startYear + 1}-${startYear + 2}`;
 
@@ -55,7 +65,7 @@ const AcademicYearSettings = () => {
       title: `Make ${formatAcademicYear(year)} the current year?`,
       message:
         `The board will open on ${formatAcademicYear(year)} for everyone. ` +
-        'Nothing is deleted — every earlier year stays browsable from the year switcher, ' +
+        'Nothing is deleted. Every earlier year stays browsable from the year switcher, ' +
         'and you can change this back at any time.',
       confirmLabel: 'Make it current',
       tone: 'info'
@@ -101,33 +111,25 @@ const AcademicYearSettings = () => {
             This is what the board opens on for every visitor.
           </p>
 
-          {derived !== currentYear && (
-            <p className="ay-settings-note">
-              <FiInfo /> By the calendar it is now {formatAcademicYear(derived)}. The board does
-              not switch on its own — a council hands over on its own schedule, not on 1 August.
-            </p>
-          )}
+          <p className="ay-settings-note">
+            <FiInfo /> The board never changes this on its own, whatever the calendar says. A
+            term ends when the next council is elected and takes over, which is not a date.
+          </p>
 
           <div className="ay-settings-actions">
-            {derived !== currentYear && (
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={() => handleRollover(derived)}
-                disabled={isSaving}
-              >
-                Move to {formatAcademicYear(derived)}
-              </button>
-            )}
             <button
               type="button"
               className="btn-secondary"
               onClick={() => handleRollover(nextYear)}
               disabled={isSaving}
             >
-              Start {formatAcademicYear(nextYear)}
+              Hand over to {formatAcademicYear(nextYear)}
             </button>
           </div>
+          <p className="ay-settings-hint">
+            Only after the new council has been elected and turned over. Everything from
+            {' '}{formatAcademicYear(currentYear)} stays browsable, and you can change it back.
+          </p>
         </section>
 
         <section className="ay-settings-card">
@@ -171,7 +173,7 @@ const AcademicYearSettings = () => {
 
       <p className="ay-settings-note">
         <FiInfo /> Dated content belongs to a year by its own date, so nothing had to be tagged by
-        hand. Officers carry the year explicitly, since they have no date — set it on each officer
+        hand. Officers carry the year explicitly, since they have no date, so set it on each officer
         when you add next year's council. The constitution and request-letter templates are not
         year-scoped: they are standing documents and show under every year.
       </p>

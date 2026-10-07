@@ -17,9 +17,9 @@ import AdminSearchBar, { matchesQuery } from '../../components/AdminSearchBar';
 import './StudentSubmissions.css';
 
 const formatWhen = (value) => {
-  if (!value) return '—';
+  if (!value) return 'N/A';
   const date = typeof value?.toDate === 'function' ? value.toDate() : new Date(value);
-  if (Number.isNaN(date.getTime())) return '—';
+  if (Number.isNaN(date.getTime())) return 'N/A';
   return date.toLocaleString('en-US', {
     year: 'numeric',
     month: 'short',
@@ -83,14 +83,14 @@ const StudentSubmissions = ({ mode = 'tickets' }) => {
               ? 'Student tickets contain names, emails and formal grievances.'
               : 'Suggestions are submitted in confidence.'}{' '}
             The database only releases them to a Google account listed in the <code>admins</code>
-            {' '}collection — the admin username and password cannot be checked by the server.
+            {' '}collection. The admin username and password cannot be checked by the server.
           </p>
 
           {voter ? (
             <>
               <p className="submissions-gate-current">
                 Signed in as <strong>{voter.email}</strong>
-                {isCheckingAdmin ? ' — checking access…' : ' — this account is not on the admin roster.'}
+                {isCheckingAdmin ? ': checking access…' : ': this account is not on the admin roster.'}
               </p>
               <div className="submissions-gate-actions">
                 <button type="button" className="btn-secondary" onClick={signOut}>
@@ -273,7 +273,7 @@ const StudentSubmissions = ({ mode = 'tickets' }) => {
                 </p>
               ) : (
                 <p className="submission-from anonymous">
-                  <FiLock /> Anonymous — no identifying information was recorded
+                  <FiLock /> Anonymous, no identifying information was recorded
                 </p>
               )}
 

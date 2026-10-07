@@ -65,7 +65,7 @@ const ConstitutionByLaws = () => {
   const handleDelete = async (id) => {
     const shouldDelete = await confirm({
       title: 'Delete document?',
-      message: 'This document will be permanently removed. This cannot be undone.',
+      message: 'This document comes off the site right away. You will have a few seconds to undo it.',
       confirmLabel: 'Delete',
       tone: 'danger'
     });
@@ -81,6 +81,14 @@ const ConstitutionByLaws = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Checked explicitly rather than left to the inputs' `required` attribute:
+    // that native validation bubble anchors unreliably on a field inside this
+    // modal's fixed, scrolling layout, so a blank title or date could silently
+    // block the submit with no visible message.
+    if (!formData.title.trim() || !formData.effectiveDate) {
+      notify('Please give it a title and an effective date before saving.');
+      return;
+    }
     setIsSaving(true);
 
     let uploadedUrl = '';
@@ -294,7 +302,6 @@ const ConstitutionByLaws = () => {
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder="e.g., SSC Constitution and By-Laws"
-                    required
                   />
                 </div>
                 <div className="form-row">
@@ -324,7 +331,6 @@ const ConstitutionByLaws = () => {
                       type="date"
                       value={formData.effectiveDate}
                       onChange={(e) => setFormData({ ...formData, effectiveDate: e.target.value })}
-                      required
                     />
                   </div>
                 </div>
@@ -352,7 +358,7 @@ const ConstitutionByLaws = () => {
                     accept=".pdf,.doc,.docx"
                     onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                   />
-                  <small className="form-hint">PDF is recommended — it previews directly on the site.</small>
+                  <small className="form-hint">PDF is recommended, it previews directly on the site.</small>
                   {selectedFile && (
                     <div className="selected-file-row">
                       <span>{selectedFile.name}</span>
@@ -386,7 +392,7 @@ const ConstitutionByLaws = () => {
                     placeholder="https://drive.google.com/file/d/.../view"
                   />
                   <small className="form-hint">
-                    Google Drive links preview directly on the site — set the file to
+                    Google Drive links preview directly on the site. Set the file to
                     “Anyone with the link can view”. Use this for large documents.
                   </small>
                 </div>

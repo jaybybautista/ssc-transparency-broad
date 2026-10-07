@@ -48,12 +48,29 @@ export const formatAcademicYear = (academicYear) =>
  * First and last calendar day of an academic year, as the `YYYY-MM-DD` strings
  * the content documents actually store. Inclusive at both ends.
  */
-export const academicYearBounds = (academicYear) => {
+export const academicYearBounds = (academicYear, { openEnded = false } = {}) => {
   const [start] = String(academicYear || '').split('-').map(Number);
   if (!start) return null;
 
   const month = String(AY_START_MONTH).padStart(2, '0');
   const endMonth = String(AY_START_MONTH - 1).padStart(2, '0');
+
+  /*
+   * `openEnded` is for the term that is actually running.
+   *
+   * A council's term does not end because the calendar rolled over to August.
+   * It ends when the next council takes over, and that is an event the council
+   * declares, not a date. Closing the sitting term at 31 July meant everything
+   * the 2025-2026 council posted in August and September 2026 fell outside its
+   * own year and vanished from the board, while the year it fell into had no
+   * council, no election and nothing else in it.
+   *
+   * So the running term has a start and no end: it holds everything from its
+   * first day until a later year is declared current, at which point this one
+   * gets its upper bound back and becomes a closed archive.
+   */
+  if (openEnded) return { start: `${start}-${month}-01`, end: '' };
+
   // Day 31 is safe as an upper bound for a string comparison even in a 30-day
   // month: no stored date can sort above it within that month.
   return { start: `${start}-${month}-01`, end: `${start + 1}-${endMonth}-31` };
@@ -67,7 +84,13 @@ export const academicYearBounds = (academicYear) => {
  * a year to switch into that is empty by definition.
  */
 export const academicYearRange = (earliest, latest) => {
-  const top = latest || currentAcademicYear();
+  /*
+   * With nothing known, offer nothing. Falling back to the calendar here put a
+   * year in the switcher that no council had declared, which is the one thing
+   * this module exists to avoid.
+   */
+  const top = latest || earliest;
+  if (!top) return [];
   const firstYear = Number(String(earliest || top).split('-')[0]);
   const lastYear = Number(String(top).split('-')[0]);
 
@@ -89,3 +112,26 @@ export const recordAcademicYear = (record) =>
   record?.academicYear || academicYearOf(record?.date || record?.effectiveDate || '');
 
 export const isCurrentAcademicYear = (academicYear) => academicYear === currentAcademicYear();
+
+/**
+ * Which academic year the board opens on when no admin has declared one.
+ *
+ * The answer is the *earliest* year that has content, and it is deliberate:
+ * combined with the open-ended bounds above, that one term then holds every
+ * record on the board, and the board never advances a term by itself.
+ *
+ * Every previous attempt to be cleverer than this got it wrong, because the
+ * information simply is not in the data. A handover is an election and a
+ * turnover ceremony, not a date arithmetic problem. Guessing from the calendar
+ * declared a 2026-2027 term that had held no election and had no officers;
+ * guessing from the newest post did the same the moment the sitting council
+ * posted anything in August. Both hid that council's own work from its own
+ * board.
+ *
+ * So the board waits to be told. An admin declares the year in
+ * settings/board — Admin -> Academic Year — and that declaration is the only
+ * thing that ever moves it on.
+ *
+ * Returns '' when there is no content at all, leaving the choice to the caller.
+ */
+export const defaultActiveYear = (earliestContentYear) => earliestContentYear || '';

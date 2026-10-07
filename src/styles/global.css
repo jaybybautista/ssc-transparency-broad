@@ -802,7 +802,15 @@ ul, ol {
 }
 
 /* Base modal layout so any page can render a read modal without its own CSS.
-   Page-scoped rules (e.g. .resolutions-page .modal-content) still win. */
+   Page-scoped rules (e.g. .resolutions-page .modal-content) still win.
+
+   text-align resets to left here because a modal is mounted where its
+   trigger sits in the tree, not where it visually appears. A trigger inside
+   a centered page-header (.page-header-content is text-align: center) hands
+   that alignment down through inheritance to every heading and paragraph in
+   the modal, even though the modal itself renders fixed to the viewport,
+   nowhere near the header. That is what left AlertSubscribe's whole body
+   centered. */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -811,6 +819,7 @@ ul, ol {
   align-items: center;
   justify-content: center;
   padding: 2rem;
+  text-align: left;
 }
 
 .modal-content {
@@ -856,7 +865,7 @@ ul, ol {
 }
 
 .announcement-read-more:hover {
-  text-decoration: underline;
+  color: var(--accent-text-strong);
 }
 
 /* Saved-image manager used inside admin forms */

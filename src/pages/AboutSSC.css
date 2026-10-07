@@ -185,142 +185,6 @@
   line-height: 1.6;
 }
 
-.division-section {
-  padding: 1.75rem;
-  margin-bottom: 2.5rem;
-  background: var(--gray-50);
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius-2xl);
-}
-
-.division-title {
-  font-size: 1.25rem;
-  color: var(--gray-900);
-  margin-bottom: 1.25rem;
-  border-bottom: 1px solid var(--gray-200);
-  padding-bottom: 0.85rem;
-}
-
-/* Officers Grid */
-.officers-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.5rem;
-  margin-bottom: 3rem;
-}
-
-.officer-card {
-  background: var(--surface);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-md);
-  overflow: hidden;
-  transition: all var(--transition-base);
-  animation: fadeSlideUp 0.5s ease backwards;
-}
-
-.officer-card:hover {
-  transform: translateY(-6px);
-  box-shadow: var(--shadow-xl);
-}
-
-.officer-image {
-  position: relative;
-  aspect-ratio: 1;
-  overflow: hidden;
-}
-
-.officer-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform var(--transition-slow);
-}
-
-.officer-card:hover .officer-image img {
-  transform: scale(1.05);
-}
-
-.officer-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 50%);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 1rem;
-  opacity: 0;
-  transition: opacity var(--transition-base);
-}
-
-.officer-card:hover .officer-overlay {
-  opacity: 1;
-}
-
-.overlay-btn {
-  width: 40px;
-  height: 40px;
-  background: var(--surface);
-  color: var(--accent-text);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  transition: all var(--transition-fast);
-}
-
-.overlay-btn:hover {
-  background: var(--primary-600);
-  color: white;
-  transform: scale(1.1);
-}
-
-.officer-info {
-  padding: 1.25rem;
-}
-
-.officer-position {
-  display: inline-block;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--accent-text);
-  background: var(--primary-50);
-  padding: 0.25rem 0.6rem;
-  border-radius: var(--radius-full);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.5rem;
-}
-
-.officer-name {
-  font-size: 1.1rem;
-  color: var(--gray-900);
-  margin-bottom: 0.25rem;
-}
-
-.officer-course {
-  font-size: 0.8rem;
-  color: var(--gray-500);
-  margin: 0;
-}
-
-.officer-year {
-  font-size: 0.75rem;
-  color: var(--gray-400);
-  margin: 0 0 0.75rem 0;
-}
-
-.officer-quote {
-  font-size: 0.8rem;
-  font-style: italic;
-  color: var(--gray-600);
-  margin: 0;
-  line-height: 1.4;
-}
-
 /* SSC Message */
 .ssc-message {
   background: linear-gradient(135deg, var(--primary-50) 0%, var(--secondary-50) 100%);
@@ -365,29 +229,17 @@
   .values-grid {
     grid-template-columns: repeat(3, 1fr);
   }
-  
-  .officers-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 
 @media (max-width: 1024px) {
   .mv-cards {
     grid-template-columns: 1fr;
   }
-  
-  .officers-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 @media (max-width: 768px) {
   .values-grid {
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  .division-section {
-    padding: 1.5rem;
   }
 }
 
@@ -397,10 +249,6 @@
   }
   
   .values-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .officers-grid {
     grid-template-columns: 1fr;
   }
   

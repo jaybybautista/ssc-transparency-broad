@@ -37,7 +37,6 @@ const dictionary = {
   'nav.accomplishments': ['Accomplishment Tracker', 'Talaan ng mga Nagawa'],
   'nav.requestLetters': ['Request Letters', 'Mga Request Letter'],
   'nav.openMenu': ['Open menu', 'Buksan ang menu'],
-  'nav.returnAsUser': ['Return as User', 'Bumalik bilang User'],
 
   // ---- common actions ----
   'action.search': ['Search', 'Maghanap'],
@@ -82,8 +81,8 @@ const dictionary = {
   // ---- errors ----
   'error.pageTitle': ['This page could not be displayed', 'Hindi maipakita ang pahinang ito'],
   'error.pageBody': [
-    'The rest of the board is still working — you can go back and try another section.',
-    'Gumagana pa ang ibang bahagi ng board — maaari kang bumalik at pumili ng ibang seksyon.'
+    'The rest of the board is still working, so you can go back and try another section.',
+    'Gumagana pa ang ibang bahagi ng board, kaya maaari kang bumalik at pumili ng ibang seksyon.'
   ],
   'error.generic': ['Something went wrong', 'May naganap na problema'],
   'error.genericBody': [
@@ -187,6 +186,19 @@ const dictionary = {
   'cal.allStatus': ['All Status', 'Lahat ng Katayuan'],
   'cal.jumpToDate': ['Jump to a date', 'Pumunta sa petsa'],
   'cal.upcoming': ['Upcoming Events', 'Mga Paparating na Gawain'],
+  'cal.upcomingShort': ['Upcoming', 'Paparating'],
+  'cal.past': ['Past', 'Nakaraan'],
+  'cal.pastTitle': ['Past Activities', 'Mga Nakaraang Gawain'],
+  'cal.noUpcoming': [
+    'No activities are scheduled yet. Check back soon.',
+    'Wala pang nakatakdang gawain. Bumalik ka lang mamaya.'
+  ],
+  'cal.noPast': [
+    'No activities have taken place yet this academic year.',
+    'Wala pang naganap na gawain sa taong panuruang ito.'
+  ],
+  'cal.showAll': ['Show all', 'Ipakita lahat'],
+  'cal.showLess': ['Show less', 'Bawasan'],
   'cal.noneOnDate': ['No events scheduled for this date.', 'Walang nakatakdang gawain sa petsang ito.'],
   'cal.addToCalendarHint': ['Adds this activity, with a reminder, to your own calendar app.', 'Idaragdag ito, kasama ang paalala, sa sarili mong calendar app.'],
 
@@ -208,6 +220,22 @@ const dictionary = {
   'mv.title': ['Mission & Vision', 'Misyon at Bisyon'],
   'off.title': ['Meet the Officers', 'Makilala ang mga Opisyal'],
   'off.none': ['No officers yet', 'Wala pang opisyal'],
+  'common.close': ['Close', 'Isara'],
+  'common.all': ['All', 'Lahat'],
+  'off.seeChart': ['See Organizational Chart', 'Tingnan ang Organizational Chart'],
+  'off.searchPlaceholder': [
+    'Find an officer by name, position or program',
+    'Maghanap ng opisyal ayon sa pangalan, posisyon o programa'
+  ],
+  'off.noMatch': ['No officer matches that', 'Walang opisyal na tumutugma'],
+  'off.noMatchHint': [
+    'Try a name, a position, or a program such as BSIT.',
+    'Subukan ang pangalan, posisyon, o programa tulad ng BSIT.'
+  ],
+  'off.chartTitle': ['Organizational Chart', 'Organizational Chart'],
+  'off.division': ['Division', 'Dibisyon'],
+  'off.program': ['Program', 'Programa'],
+  'off.yearLevel': ['Year level', 'Taong antas'],
 
   // ---- constitution ----
   'con.title': ['Constitution & By-Laws', 'Konstitusyon at Alituntunin'],
@@ -242,10 +270,19 @@ const dictionary = {
 
   // ---- accomplishments ----
   'acc.title': ['Accomplishment Tracker', 'Talaan ng mga Nagawa'],
-  'acc.completed': ['Completed', 'Tapos na'],
-  'acc.inProgress': ['In Progress', 'Isinasagawa'],
-  'acc.upcoming': ['Upcoming', 'Paparating'],
-  'acc.viewPost': ['View Facebook Post', 'Tingnan sa Facebook'],
+  // The stored values stay 'Completed', 'In Progress' and 'Upcoming'; these are
+  // only what a reader sees. See src/lib/accomplishments.js.
+  'acc.completed': ['Delivered', 'Naisakatuparan'],
+  'acc.inProgress': ['Ongoing', 'Isinasagawa'],
+  'acc.upcoming': ['Planned', 'Nakaplano'],
+  'acc.all': ['All', 'Lahat'],
+  'acc.allCategories': ['All categories', 'Lahat ng kategorya'],
+  'acc.evidence': ['Evidence', 'Patunay'],
+  'acc.photoCount': ['photos', 'larawan'],
+  'acc.partialCounts': [
+    'Counts cover what has loaded so far. Use Load more to include the rest.',
+    'Ang bilang ay para sa mga naipakita pa lamang. Pindutin ang Load more para sa iba pa.'
+  ],
 
   // ---- request letters ----
   'req.title': ['Request Letters', 'Mga Request Letter'],

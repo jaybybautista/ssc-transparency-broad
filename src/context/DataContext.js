@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   addDoc,
   collection,
@@ -35,8 +35,13 @@ import {
   academicYearBounds,
   academicYearOf,
   academicYearRange,
-  currentAcademicYear
+  defaultActiveYear
 } from '../lib/academicYear';
+import {
+  normalizeSiteProfile,
+  profileByteSize,
+  PROFILE_SIZE_LIMIT
+} from '../lib/siteProfile';
 import { useVoterAuth } from './VoterAuthContext';
 
 const DataContext = createContext(null);
@@ -103,11 +108,18 @@ const normalizeResolution = (item) => ({
   fileUrl: item.fileUrl || ''
 });
 
-const normalizeOfficer = (item) => ({
-  // Officers are the one content type with no date, so the academic year has to
-  // be stored. Records written before this existed have no field and are read as
-  // belonging to the current year — which is where they were in fact serving.
-  academicYear: item.academicYear || currentAcademicYear(),
+const normalizeOfficer = (item, fallbackYear = '') => ({
+  /*
+   * Officers are the one content type with no date, so the academic year has to
+   * be stored.
+   *
+   * The fallback is the year the board has declared, passed in by the caller,
+   * and never the calendar's. Deriving it here stamped every officer saved
+   * without an explicit year with whatever term the clock was in: save one in
+   * September and it landed in a year that has held no election, where nobody
+   * looking at the current council would ever see it.
+   */
+  academicYear: item.academicYear || fallbackYear,
   name: item.name || '',
   position: item.position || '',
   division: item.division || 'Core Officers',
@@ -115,7 +127,13 @@ const normalizeOfficer = (item) => ({
   yearLevel: item.yearLevel || '',
   image: item.image || '',
   email: item.email || '',
-  quote: item.quote || ''
+  quote: item.quote || '',
+  // Where the admin placed this officer in their section. null means nobody
+  // has arranged that section, so it falls back to seniority of title.
+  // Written as a number because 0 is a real position, not "unset".
+  order: Number.isFinite(Number(item.order)) && item.order !== null && item.order !== ''
+    ? Number(item.order)
+    : null
 });
 
 const normalizeMeeting = (item) => ({
@@ -136,7 +154,13 @@ const normalizeAccomplishment = (item) => ({
   date: item.date || new Date().toISOString().split('T')[0],
   category: item.category || '',
   status: item.status || 'Upcoming',
-  description: item.description || ''
+  description: item.description || '',
+  // Evidence. Without it an accomplishment is only the council's own account
+  // of itself; the link and the photos are what make it a record.
+  linkUrl: item.linkUrl || '',
+  linkLabel: item.linkLabel || '',
+  modifiedBy: item.modifiedBy || '',
+  imageUrls: normalizeImageUrls(item)
 });
 
 const normalizeRequestType = (item) => ({
@@ -306,12 +330,6 @@ export const voteDocId = (resolutionId, uid) => `${resolutionId}__${uid}`;
 export const PAGE_SIZE = 60;
 
 /**
- * How old content must be before its academic year is treated as the board's
- * current one. See the settling-window note in the discovery effect below.
- */
-const SETTLED_DAYS = 45;
-
-/**
  * The listener table.
  *
  * `orderField` moves the sort to the server so `limit` returns the *newest*
@@ -341,7 +359,15 @@ const PUBLIC_COLLECTIONS = [
     sort: (a, b) => new Date(a.date) - new Date(b.date)
   },
   { key: 'resolutions', orderField: 'date', direction: 'desc', label: 'resolutions', yearScoped: true },
-  { key: 'officers', label: 'officers' },
+  {
+    key: 'officers',
+    label: 'officers',
+    // Officers are a bounded set, one council per year, and both pages show
+    // everybody at once with no Load More to reach past a cap. At 49 of 60 the
+    // council was one round of committee appointments away from an officer
+    // silently not existing on the site.
+    pageSize: 400
+  },
   { key: 'meetings', orderField: 'date', direction: 'desc', label: 'meeting records', yearScoped: true },
   { key: 'accomplishments', orderField: 'date', direction: 'desc', label: 'accomplishments', yearScoped: true },
   { key: 'requestTypes', label: 'request letter types' },
@@ -350,40 +376,36 @@ const PUBLIC_COLLECTIONS = [
   { key: 'constitution', orderField: 'effectiveDate', direction: 'desc', label: 'constitution documents' }
 ];
 
+/** How long a deleted record can be brought back. See deleteWithUndo. */
+const UNDO_WINDOW_MS = 15000;
+
 /**
- * Deletes a document and then the uploaded files it referenced.
+ * Deletes a document and hands back what it contained.
  *
- * Order matters: the document goes first, so a cleanup that fails cannot leave
- * the record undeletable. The file removal is deliberately not awaited by
- * callers — an orphaned object in Storage is a housekeeping issue, not
- * something that should make "Delete" appear to fail.
+ * The uploaded files are deliberately NOT removed here. Deleting a record is
+ * the one action on this board that cannot be repaired by retyping it, so the
+ * caller holds the file cleanup open for the length of the undo window and only
+ * bins the files once the record can no longer come back. Binning them
+ * immediately would make "Undo" restore a record whose images had already gone.
  *
- * Only files in this project's Storage bucket are removed. Base64 fallbacks
- * live inside the document and vanish with it; Google Drive links belong to
- * someone's Drive and are left alone. See deleteRecordFiles.
+ * Reads the record rather than looking it up in local state: the listeners are
+ * paginated, so a document outside the current page would not be found in the
+ * array, and both its files and its undo would be lost silently.
  */
-const removeDocAndFiles = async (collectionName, id) => {
+const removeDoc = async (collectionName, id) => {
   const reference = doc(db, collectionName, String(id));
 
-  // Read the record rather than looking it up in local state: the listeners
-  // are paginated, so a document outside the current page would not be found
-  // in the array, and its files would be orphaned silently.
   let record = null;
   try {
     const snapshot = await getDoc(reference);
     if (snapshot.exists()) record = snapshot.data();
   } catch (error) {
-    // Fall through — losing the file cleanup is better than blocking a delete.
+    // Fall through — losing the undo is better than blocking a delete.
   }
 
   await deleteDoc(reference);
   recordAudit('delete', collectionName, id, record);
-
-  if (record) {
-    deleteRecordFiles(record).catch(() => {
-      /* already logged; never surfaced as a failed delete */
-    });
-  }
+  return record;
 };
 
 export const DataProvider = ({ children }) => {
@@ -436,10 +458,16 @@ export const DataProvider = ({ children }) => {
    * Which academic year the board is showing. Defaults to the current one, so a
    * student always lands on this council's work.
    */
-  const [selectedYear, setSelectedYear] = useState(currentAcademicYear);
+  /*
+   * Empty until the board's own year is known, never seeded from the clock.
+   * An empty year means "not established yet" and is treated everywhere as
+   * "do not filter", so the board shows everything rather than briefly
+   * claiming a term nobody declared.
+   */
+  const [selectedYear, setSelectedYear] = useState('');
 
   /** Earliest year with any content, discovered once (see the effect below). */
-  const [earliestYear, setEarliestYear] = useState(currentAcademicYear);
+  const [earliestYear, setEarliestYear] = useState('');
 
   /**
    * The academic year the board presents as "current".
@@ -454,29 +482,84 @@ export const DataProvider = ({ children }) => {
    */
   const [storedActiveYear, setStoredActiveYear] = useState('');
 
-  /** Academic year of the newest content that actually exists. */
-  const [latestContentYear, setLatestContentYear] = useState('');
+  /**
+   * The council's own details (name, logos, contact, mission).
+   *
+   * Held raw and normalised on read, so the defaults in siteProfile.js stay the
+   * single source of "what the site shows when this has never been edited".
+   */
+  const [storedProfile, setStoredProfile] = useState(null);
 
   /**
    * The year the board opens on.
    *
-   * Precedence, and the reasoning for it:
-   *   1. What an admin has declared in settings/board — always wins.
-   *   2. Otherwise the year of the newest content that actually exists. This is
-   *      the important one. Falling back to the calendar meant that on 1 August
-   *      the board jumped to a council that had not started yet and showed an
-   *      empty year, with the sitting council's work filed under "archive".
-   *      Content is a far better signal of whose term is running than the date.
-   *   3. Only if there is no content at all, the calendar.
+   * Precedence:
+   *   1. What an admin has declared in settings/board. This is the real answer
+   *      and the only thing that ever advances the board to a new term.
+   *   2. Otherwise the earliest year that has content, which — because the
+   *      running term has no upper bound (see academicYearBounds) — holds
+   *      everything posted since. Nothing is hidden while nobody has declared.
+   *   3. Nothing. An empty year filters nothing and claims nothing, which is
+   *      the honest answer when no term has been declared and there is no
+   *      content to infer one from.
+   *
+   * The board deliberately does not infer a handover. Two earlier versions
+   * tried, from the calendar and then from the newest post, and both announced
+   * a term that had held no election and had no officers, hiding the sitting
+   * council's own work from its own board.
    */
-  const activeYear = storedActiveYear || latestContentYear || currentAcademicYear();
+  const activeYear = storedActiveYear || defaultActiveYear(earliestYear);
 
   /** Set once the visitor picks a year, so the stored setting stops overriding. */
   const hasChosenYearRef = useRef(false);
 
+  /**
+   * The same fact as the ref above, as state.
+   *
+   * A ref cannot be depended on, and the difference matters to any view that
+   * reacts to the year rather than merely reading it: the calendar moves its
+   * grid to the year you pick, and must be able to tell a deliberate pick from
+   * the board settling on its default during load. Treating the settle as a
+   * pick would drag the grid off today's month on every page load.
+   */
+  const [hasChosenYear, setHasChosenYear] = useState(false);
+
   const chooseYear = (year) => {
     hasChosenYearRef.current = true;
+    setHasChosenYear(true);
     setSelectedYear(year);
+  };
+
+  /** The council's details, with every unset field falling back to the built-in. */
+  const siteProfile = useMemo(() => normalizeSiteProfile(storedProfile), [storedProfile]);
+
+  /**
+   * Saves the council's details. Admin only.
+   *
+   * Written as a whole document rather than merged: the form edits every field
+   * at once, and a merge would leave a cleared logo in place, since the empty
+   * string that means "go back to the bundled logo" reads to merge as a value
+   * worth keeping.
+   */
+  const updateSiteProfile = async (profile) => {
+    if (!isFirebaseEnabled || !db) throw new Error('The cloud database is not configured.');
+
+    const payload = normalizeSiteProfile(profile);
+    const size = profileByteSize(payload);
+    if (size > PROFILE_SIZE_LIMIT) {
+      // Caught here rather than letting Firestore refuse the write, so the
+      // message names the cause — almost always a logo pasted in as a data URL
+      // because Storage is off — instead of surfacing a raw API error after the
+      // whole form has been filled in.
+      throw new Error(
+        `These details come to ${Math.round(size / 1024)}KB, over the ${Math.round(
+          PROFILE_SIZE_LIMIT / 1024
+        )}KB a single record can hold. A logo is the usual cause: use a smaller image, or paste a link to one instead of uploading it.`
+      );
+    }
+
+    await setDoc(doc(db, 'settings', 'profile'), { ...payload, updatedAt: serverTimestamp() });
+    recordAudit('settings', 'settings', 'profile', { title: 'Site profile updated' });
   };
 
   /** Declares which year the board presents as current. Admin only. */
@@ -489,6 +572,7 @@ export const DataProvider = ({ children }) => {
     );
     recordAudit('settings', 'settings', 'board', { title: `Active academic year set to ${year}` });
     hasChosenYearRef.current = false;
+    setHasChosenYear(false);
     setSelectedYear(year);
   };
 
@@ -514,7 +598,7 @@ export const DataProvider = ({ children }) => {
     const byNewestDate = (field) => (a, b) => new Date(b[field]) - new Date(a[field]);
 
     const unsubscribers = PUBLIC_COLLECTIONS.map((config) => {
-      const cap = limits[config.key] ?? PAGE_SIZE;
+      const cap = limits[config.key] ?? config.pageSize ?? PAGE_SIZE;
 
       /*
        * Academic-year scoping happens here, on the server.
@@ -529,19 +613,27 @@ export const DataProvider = ({ children }) => {
        * constitution, request-letter templates) are not year-scoped at all,
        * because hiding the by-laws while browsing an earlier year would be
        * worse than useless.
+       *
+       * Signed-in admins are never scoped. Year filtering is a reading aid for
+       * students; for the officer maintaining the board it is a trap. An event
+       * saved with a date outside the shown year vanished from the calendar AND
+       * from the dashboard list, with no error and nothing to click — the save
+       * had worked, but every view that could have confirmed it was filtered.
+       * Whoever is responsible for the content has to be able to see all of it.
        */
-      const bounds = config.yearScoped ? academicYearBounds(selectedYear) : null;
+      const bounds =
+        config.yearScoped && !isSscAdmin
+          ? academicYearBounds(selectedYear, { openEnded: selectedYear === activeYear })
+          : null;
 
       // orderBy would drop documents missing the field, so collections without a
       // date get a bare cap instead.
       const constraints = config.orderField
         ? [
-            ...(bounds
-              ? [
-                  where(config.orderField, '>=', bounds.start),
-                  where(config.orderField, '<=', bounds.end)
-                ]
-              : []),
+            ...(bounds ? [where(config.orderField, '>=', bounds.start)] : []),
+            // No upper bound on the running term: it holds everything from its
+            // first day onward until a later year is declared current.
+            ...(bounds?.end ? [where(config.orderField, '<=', bounds.end)] : []),
             orderBy(config.orderField, config.direction || 'desc'),
             limit(cap)
           ]
@@ -584,7 +676,10 @@ export const DataProvider = ({ children }) => {
       unsubscribers.forEach((unsubscribe) => unsubscribe());
       unsubResolutionVotes();
     };
-  }, [limits, selectedYear]);
+    // activeYear belongs here: it decides whether the shown year is the running
+    // term (open-ended) or a closed archive, so declaring a new year has to
+    // resubscribe every listener with the new bounds.
+  }, [limits, selectedYear, isSscAdmin, activeYear]);
 
   // Switching year starts that year's browsing from the first page again.
   useEffect(() => {
@@ -618,69 +713,18 @@ export const DataProvider = ({ children }) => {
         }
       };
 
-      // Newest document dated on or before the settling cutoff. A range and an
-      // order on the same field, so no composite index is needed.
-      const settledEdge = async (config, before) => {
-        try {
-          const snapshot = await getDocs(
-            query(
-              collection(db, config.key),
-              where(config.orderField, '<=', before),
-              orderBy(config.orderField, 'desc'),
-              limit(1)
-            )
-          );
-          return snapshot.docs[0]?.data()?.[config.orderField] || '';
-        } catch (error) {
-          return '';
-        }
-      };
-
-      const settleBefore = new Date();
-      settleBefore.setDate(settleBefore.getDate() - SETTLED_DAYS);
-      const settleBeforeIso = settleBefore.toISOString().split('T')[0];
-
-      const [oldest, newest, settled] = await Promise.all([
-        Promise.all(dated.map((config) => edge(config, 'asc'))),
-        Promise.all(dated.map((config) => edge(config, 'desc'))),
-        Promise.all(dated.map((config) => settledEdge(config, settleBeforeIso)))
-      ]);
+      const oldest = await Promise.all(dated.map((config) => edge(config, 'asc')));
 
       if (cancelled) return;
 
+      // The earliest dated record is both ends of the answer: it bounds the
+      // year switcher, and until an admin declares a year it *is* the year the
+      // board opens on. Nothing here tries to work out whether a handover has
+      // happened — see defaultActiveYear.
       const earliestDate = oldest.filter(Boolean).sort()[0];
       if (earliestDate) {
         const year = academicYearOf(earliestDate);
         if (year) setEarliestYear(year);
-      }
-
-      /*
-       * The newest content that has had time to settle, not simply the newest.
-       *
-       * A term does not take over the board the day its calendar year turns.
-       * The council that posted on 17 August 2026 was the 2025-2026 council —
-       * their term had not ended — but a plain "newest post" rule filed those
-       * posts under 2026-2027 and pushed the sitting council into the archive,
-       * with the incoming year showing almost nothing.
-       *
-       * Looking back past a settling window fixes that: a new academic year
-       * only becomes the default once it has content that is genuinely a few
-       * weeks old, by which point the term really is running. An admin
-       * declaring the year in settings/board overrides this entirely.
-       */
-      const settledDate = settled.filter(Boolean).sort().pop();
-      if (settledDate) {
-        const year = academicYearOf(settledDate);
-        if (year) setLatestContentYear(year);
-      } else {
-        // Nothing older than the window at all: fall back to the newest thing
-        // that exists rather than to the calendar.
-        const today = new Date().toISOString().split('T')[0];
-        const anyDate = newest.filter(Boolean).filter((date) => date <= today).sort().pop();
-        if (anyDate) {
-          const year = academicYearOf(anyDate);
-          if (year) setLatestContentYear(year);
-        }
       }
     })();
 
@@ -700,6 +744,19 @@ export const DataProvider = ({ children }) => {
       },
       () => {
         /* No settings document yet: the derived year stands. */
+      }
+    );
+  }, []);
+
+  // The council's details. Public, like everything else it describes.
+  useEffect(() => {
+    if (!isFirebaseEnabled || !db) return undefined;
+
+    return onSnapshot(
+      doc(db, 'settings', 'profile'),
+      (snapshot) => setStoredProfile(snapshot.exists() ? snapshot.data() : null),
+      () => {
+        /* Never edited, or unreadable: the built-in details stand. */
       }
     );
   }, []);
@@ -729,6 +786,98 @@ export const DataProvider = ({ children }) => {
     setLimits((prev) => ({ ...prev, [collectionKey]: (prev[collectionKey] ?? PAGE_SIZE) + PAGE_SIZE }));
   };
 
+  /*
+   * Undo for deletes.
+   *
+   * Everything else an officer does can be repaired by editing the record
+   * again. A delete cannot: the document is gone, and on a board that is the
+   * council's own record of its term, that is not recoverable by retyping.
+   *
+   * So a delete keeps the document's contents in memory for a short window and
+   * offers to write them back under the same id. The id matters — restoring
+   * under a new one would break the reference code on a ticket, the vote tally
+   * keyed to a resolution, and the view count keyed to the record.
+   *
+   * The window also gates the file cleanup (see removeDoc), so an undo brings
+   * the record back whole rather than with broken images.
+   */
+  const [undoableDelete, setUndoableDelete] = useState(null);
+  const undoTimerRef = useRef(null);
+
+  /*
+   * The pending record is held in a ref as well as in state.
+   *
+   * State is what renders the toast; the ref is what the callbacks read. That
+   * split keeps `undoDelete` and `dismissUndo` stable across renders — they
+   * close over nothing that goes stale — which matters because the toast holds
+   * on to them while a timer is running underneath it.
+   */
+  const pendingUndoRef = useRef(null);
+
+  const clearUndo = useCallback(() => {
+    clearTimeout(undoTimerRef.current);
+    pendingUndoRef.current = null;
+    setUndoableDelete(null);
+  }, []);
+
+  useEffect(() => () => clearTimeout(undoTimerRef.current), []);
+
+  const deleteWithUndo = useCallback(async (collectionName, id, label) => {
+    const record = await removeDoc(collectionName, id);
+    if (!record) return;
+
+    const pending = {
+      collectionName,
+      id: String(id),
+      data: record,
+      label: label || record.title || record.name || record.number || record.type || 'record',
+      at: Date.now()
+    };
+
+    clearTimeout(undoTimerRef.current);
+    pendingUndoRef.current = pending;
+    setUndoableDelete(pending);
+
+    undoTimerRef.current = setTimeout(() => {
+      // The window has closed: the record is now genuinely gone, so the files
+      // it owned can go too.
+      deleteRecordFiles(record).catch(() => {
+        /* an orphaned object is housekeeping, never a failed delete */
+      });
+      pendingUndoRef.current = null;
+      setUndoableDelete(null);
+    }, UNDO_WINDOW_MS);
+  }, []);
+
+  /** Writes the last deleted record back under its original id. */
+  const undoDelete = useCallback(async () => {
+    const pending = pendingUndoRef.current;
+    if (!pending || !isFirebaseEnabled || !db) return false;
+
+    // The write comes first. Clearing the offer before it succeeded would take
+    // away the only remaining copy of the record the moment a restore failed —
+    // a refused write or a dropped connection would lose the very thing this
+    // exists to protect. The countdown is stopped, though, so the files are not
+    // binned underneath a restore that is still in flight.
+    clearTimeout(undoTimerRef.current);
+    await setDoc(doc(db, pending.collectionName, pending.id), pending.data);
+
+    clearUndo();
+    // Logged as its own action rather than erasing the delete: the audit log is
+    // append-only on purpose, and "deleted, then restored" is what happened.
+    recordAudit('create', pending.collectionName, pending.id, pending.data);
+    return true;
+  }, [clearUndo]);
+
+  /** Declines the offer, which lets the file cleanup go ahead now. */
+  const dismissUndo = useCallback(() => {
+    const pending = pendingUndoRef.current;
+    clearUndo();
+    if (pending?.data) {
+      deleteRecordFiles(pending.data).catch(() => {});
+    }
+  }, [clearUndo]);
+
 
 
   const createAnnouncement = async (payload) => {
@@ -755,7 +904,7 @@ export const DataProvider = ({ children }) => {
       setAnnouncements((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    await removeDocAndFiles('announcements', id);
+    await deleteWithUndo('announcements', id, 'announcement');
   };
 
   const createEvent = async (payload) => {
@@ -782,7 +931,7 @@ export const DataProvider = ({ children }) => {
       setEvents((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    await removeDocAndFiles('events', id);
+    await deleteWithUndo('events', id, 'event');
   };
 
   const createResolution = async (payload) => {
@@ -809,25 +958,27 @@ export const DataProvider = ({ children }) => {
       setResolutions((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    await removeDocAndFiles('resolutions', id);
+    await deleteWithUndo('resolutions', id, 'resolution');
   };
 
   const createOfficer = async (payload) => {
     if (!isFirebaseEnabled || !db) {
-      const newItem = { id: Date.now(), ...normalizeOfficer(payload) };
+      const newItem = { id: Date.now(), ...normalizeOfficer(payload, activeYear) };
       setOfficers((prev) => [...prev, newItem]);
       return;
     }
-    const created = await addDoc(collection(db, 'officers'), normalizeOfficer(payload));
+    const created = await addDoc(collection(db, 'officers'), normalizeOfficer(payload, activeYear));
     recordAudit('create', 'officers', created.id, payload);
   };
 
   const updateOfficer = async (id, payload) => {
     if (!isFirebaseEnabled || !db) {
-      setOfficers((prev) => prev.map((item) => (item.id === id ? { ...item, ...normalizeOfficer(payload) } : item)));
+      setOfficers((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, ...normalizeOfficer(payload, activeYear) } : item))
+      );
       return;
     }
-    await updateDoc(doc(db, 'officers', String(id)), normalizeOfficer(payload));
+    await updateDoc(doc(db, 'officers', String(id)), normalizeOfficer(payload, activeYear));
     recordAudit('update', 'officers', id, payload);
   };
 
@@ -836,7 +987,33 @@ export const DataProvider = ({ children }) => {
       setOfficers((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    await removeDocAndFiles('officers', id);
+    await deleteWithUndo('officers', id, 'officer');
+  };
+
+  /**
+   * Save a hand-arranged section.
+   *
+   * Takes the small list of {id, order} that orderUpdates worked out, and
+   * writes only the `order` field: a full normalizeOfficer round trip here
+   * would rewrite every field of every moved officer from whatever the caller
+   * happened to be holding, which is how a stale photo or email gets restored
+   * by someone merely dragging a name up one place.
+   */
+  const reorderOfficers = async (updates = []) => {
+    if (!updates.length) return;
+    if (!isFirebaseEnabled || !db) {
+      const byId = new Map(updates.map((entry) => [entry.id, entry.order]));
+      setOfficers((prev) =>
+        prev.map((item) => (byId.has(item.id) ? { ...item, order: byId.get(item.id) } : item))
+      );
+      return;
+    }
+    await Promise.all(
+      updates.map((entry) => updateDoc(doc(db, 'officers', String(entry.id)), { order: entry.order }))
+    );
+    recordAudit('update', 'officers', updates.map((entry) => entry.id).join(','), {
+      reordered: updates.length
+    });
   };
 
   const createMeeting = async (payload) => {
@@ -863,7 +1040,7 @@ export const DataProvider = ({ children }) => {
       setMeetings((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    await removeDocAndFiles('meetings', id);
+    await deleteWithUndo('meetings', id, 'meeting record');
   };
 
   const createAccomplishment = async (payload) => {
@@ -890,7 +1067,7 @@ export const DataProvider = ({ children }) => {
       setAccomplishments((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    await removeDocAndFiles('accomplishments', id);
+    await deleteWithUndo('accomplishments', id, 'accomplishment');
   };
 
   const createRequestType = async (payload) => {
@@ -917,7 +1094,7 @@ export const DataProvider = ({ children }) => {
       setRequestTypes((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    await removeDocAndFiles('requestTypes', id);
+    await deleteWithUndo('requestTypes', id, 'request letter type');
   };
 
   const createMemorandum = async (payload) => {
@@ -944,7 +1121,7 @@ export const DataProvider = ({ children }) => {
       setMemorandums((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    await removeDocAndFiles('memorandums', id);
+    await deleteWithUndo('memorandums', id, 'memorandum');
   };
 
   const createNarrativeReport = async (payload) => {
@@ -971,7 +1148,7 @@ export const DataProvider = ({ children }) => {
       setNarrativeReports((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    await removeDocAndFiles('narrativeReports', id);
+    await deleteWithUndo('narrativeReports', id, 'narrative report');
   };
 
   const createConstitutionDoc = async (payload) => {
@@ -999,7 +1176,7 @@ export const DataProvider = ({ children }) => {
       setConstitutionDocs((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    await removeDocAndFiles('constitution', id);
+    await deleteWithUndo('constitution', id, 'constitution document');
   };
 
   // Admin-only listeners. Kept in their own effect so they attach and detach
@@ -1278,10 +1455,19 @@ export const DataProvider = ({ children }) => {
   /**
    * Officers for the selected year. A record with no `academicYear` predates the
    * field and is shown under the current year rather than disappearing.
+   *
+   * Admins see every officer, for the same reason the dated collections above
+   * are unscoped for them: an officer filed under another year would otherwise
+   * be invisible and therefore uneditable.
    */
   const officersForYear = useMemo(
-    () => officers.filter((officer) => (officer.academicYear || activeYear) === selectedYear),
-    [officers, selectedYear, activeYear]
+    () =>
+      // No year established yet means show everyone, not nobody: filtering on
+      // an unknown year would empty the page while the settings load.
+      isSscAdmin || !selectedYear
+        ? officers
+        : officers.filter((officer) => (officer.academicYear || activeYear) === selectedYear),
+    [officers, selectedYear, activeYear, isSscAdmin]
   );
 
   const value = useMemo(
@@ -1291,6 +1477,7 @@ export const DataProvider = ({ children }) => {
       resolutions,
       officers: officersForYear,
       allOfficers: officers,
+      reorderOfficers,
       meetings,
       accomplishments,
       requestTypes,
@@ -1312,7 +1499,22 @@ export const DataProvider = ({ children }) => {
       // "Current" is what the council has declared, not what the calendar says.
       currentYear: activeYear,
       setActiveAcademicYear,
-      isViewingArchive: selectedYear !== activeYear,
+      // False for admins, who are shown every year at once, so the archive
+      // banner cannot claim they are looking at only a past council's work.
+      isViewingArchive: !isSscAdmin && selectedYear !== activeYear,
+      // True when the lists above are filtered to `selectedYear`. Admins get
+      // everything, so pages can say so instead of implying a filter is active.
+      isYearScoped: !isSscAdmin,
+      // True once the visitor has deliberately picked a year, as opposed to the
+      // board settling on its default while loading.
+      hasChosenYear,
+      // The council's own details: name, logos, contact, mission, vision.
+      siteProfile,
+      updateSiteProfile,
+      // Undo for the one action that cannot be repaired by editing: delete.
+      undoableDelete,
+      undoDelete,
+      dismissUndo,
       createAnnouncement,
       updateAnnouncement,
       deleteAnnouncement,
@@ -1373,7 +1575,7 @@ export const DataProvider = ({ children }) => {
       getResolutionTally,
       getMyResolutionVote
     }),
-    [announcements, events, resolutions, officers, meetings, accomplishments, requestTypes, memorandums, narrativeReports, constitutionDocs, resolutionVotes, voteTallies, tickets, suggestions, subscribers, isLoading, error, hasMore, selectedYear, activeYear, availableYears, officersForYear, drafts, auditLog, viewCounts]
+    [announcements, events, resolutions, officers, meetings, accomplishments, requestTypes, memorandums, narrativeReports, constitutionDocs, resolutionVotes, voteTallies, tickets, suggestions, subscribers, isLoading, error, hasMore, selectedYear, activeYear, availableYears, officersForYear, drafts, auditLog, viewCounts, isSscAdmin, hasChosenYear, undoableDelete, siteProfile]
   );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

@@ -92,7 +92,11 @@
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
-  text-decoration: underline;
+  transition: opacity var(--transition-fast);
+}
+
+.submissions-signed-in button:hover {
+  opacity: 0.75;
 }
 
 /* ---- status filter chips ---- */

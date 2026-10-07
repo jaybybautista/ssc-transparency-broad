@@ -95,7 +95,7 @@ const GlobalSearch = ({ onClose }) => {
           id: `${section.key}-${item.id}`,
           section,
           title: values[0] || 'Untitled',
-          snippet: excerpt(values.slice(1).join(' — '), needle),
+          snippet: excerpt(values.slice(1).join(' · '), needle),
           date: item.date || item.effectiveDate || ''
         });
       });
@@ -163,17 +163,19 @@ const GlobalSearch = ({ onClose }) => {
         aria-label="Search the board"
       >
         <div className="gs-input-row">
-          <FiSearch className="gs-input-icon" />
-          <input
-            ref={inputRef}
-            type="search"
-            value={term}
-            onChange={(e) => setTerm(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder="Search announcements, resolutions, officers, activities…"
-            aria-label="Search the board"
-            aria-controls="gs-results"
-          />
+          <div className="gs-field">
+            <FiSearch className="gs-input-icon" />
+            <input
+              ref={inputRef}
+              type="search"
+              value={term}
+              onChange={(e) => setTerm(e.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder="Search announcements, resolutions, officers, activities…"
+              aria-label="Search the board"
+              aria-controls="gs-results"
+            />
+          </div>
           <button type="button" className="gs-close" onClick={onClose} aria-label="Close search">
             <FiX />
           </button>
@@ -193,7 +195,7 @@ const GlobalSearch = ({ onClose }) => {
               <p>Nothing found for “{term.trim()}”.</p>
               <p className="gs-hint-small">
                 This searches {formatAcademicYear(selectedYear)}
-                {somethingUnloaded ? ', and only the records loaded so far — try “Load older” on the section you expect it in, or' : '. Try'}
+                {somethingUnloaded ? ', and only the records loaded so far. Try “Load older” on the section you expect it in, or' : '. Try'}
                 {' '}another academic year from the switcher.
               </p>
             </div>

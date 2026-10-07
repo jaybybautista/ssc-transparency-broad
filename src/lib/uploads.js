@@ -73,10 +73,10 @@ const describeStorageFailure = (error, file) => {
   const message = String(error?.message || error || '');
 
   if (code === 'storage/unauthorized') {
-    return 'Firebase Storage rejected the upload (storage rules denied it). Deploy storage.rules — see STORAGE.md.';
+    return 'Firebase Storage rejected the upload (storage rules denied it). Deploy storage.rules, see STORAGE.md.';
   }
   if (code === 'storage/retry-limit-exceeded' || message.includes('Upload timeout')) {
-    return `The upload timed out. ${formatMb(file.size)} may be too slow on this connection — try again on a faster network.`;
+    return `The upload timed out. ${formatMb(file.size)} may be too slow on this connection. Try again on a faster network.`;
   }
   if (
     code === 'storage/unknown' ||
@@ -169,7 +169,7 @@ const uploadAnyFiles = async (files, folder, onProgress) => {
         failedCount += 1;
         lastFailure =
           `“${file.name}” is ${formatMb(file.size)}. Without Firebase Storage, files are embedded in the ` +
-          `database and cannot exceed ${FALLBACK_MAX_SIZE_KB}KB. Enable Storage to upload files this large — see STORAGE.md.`;
+          `database and cannot exceed ${FALLBACK_MAX_SIZE_KB}KB. Enable Storage to upload files this large, see STORAGE.md.`;
         onProgress?.({
           current: index + 1,
           total: fileList.length,

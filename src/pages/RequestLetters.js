@@ -79,7 +79,7 @@ const RequestLetters = () => {
   const handleDelete = async (id) => {
     const shouldDelete = await confirm({
       title: 'Delete request type?',
-      message: 'This request type will be permanently removed. This cannot be undone.',
+      message: 'This request type comes off the site right away. You will have a few seconds to undo it.',
       confirmLabel: 'Delete',
       tone: 'danger'
     });
@@ -89,6 +89,14 @@ const RequestLetters = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Checked explicitly rather than left to these inputs' `required`
+    // attribute: that native validation bubble anchors unreliably on a field
+    // inside this modal's fixed, scrolling layout, so a blank field could
+    // silently block the submit with no visible message.
+    if (!formData.type.trim() || !formData.description.trim() || !formData.requirements.trim()) {
+      notify('Please fill in the type, description and requirements before saving.');
+      return;
+    }
     setIsSaving(true);
 
     let uploadedTemplateUrl = '';
@@ -302,9 +310,9 @@ const RequestLetters = () => {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="admin-modal-form">
-              <div className="form-group"><label>Type</label><input value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} required /></div>
-              <div className="form-group"><label>Description</label><textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows="3" required /></div>
-              <div className="form-group"><label>Requirements (one per line)</label><textarea value={formData.requirements} onChange={(e) => setFormData({ ...formData, requirements: e.target.value })} rows="4" required /></div>
+              <div className="form-group"><label>Type</label><input value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} /></div>
+              <div className="form-group"><label>Description</label><textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows="3" /></div>
+              <div className="form-group"><label>Requirements (one per line)</label><textarea value={formData.requirements} onChange={(e) => setFormData({ ...formData, requirements: e.target.value })} rows="4" /></div>
               <div className="form-group">
                 <label>Template File (optional)</label>
                 <input

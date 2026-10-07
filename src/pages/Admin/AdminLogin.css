@@ -10,7 +10,7 @@
   flex-direction: column;
   justify-content: center;
   padding: 3rem;
-  background: var(--white);
+  background: var(--surface);
 }
 
 .back-to-home {
@@ -82,9 +82,28 @@
   font-size: 0.9rem;
 }
 
-.error-message svg {
+.error-message svg,
+.notice-message svg {
   flex-shrink: 0;
   font-size: 1.25rem;
+}
+
+/* Amber, not red: this one says "the address may not work", while the button
+   underneath is still live. A red panel above a working button reads as a
+   dead end, which is how a warning became a blocker. */
+.notice-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--warn-soft);
+  border: 1px solid var(--warn-border);
+  border-radius: var(--radius-lg);
+  color: var(--warn-strong);
+  margin-bottom: 1.5rem;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  text-align: left;
 }
 
 .login-form .form-group {
@@ -179,7 +198,7 @@
   position: relative;
   z-index: 1;
   text-align: center;
-  color: var(--white);
+  color: #fff;
   padding: 3rem;
   max-width: 500px;
 }
@@ -264,21 +283,6 @@
 .login-btn.secondary {
   background: var(--gray-100);
   color: var(--gray-700);
-}
-
-.login-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin: 1.25rem 0 0;
-  font-size: 0.82rem;
-  line-height: 1.65;
-  color: var(--gray-500);
-}
-
-.login-note svg {
-  flex-shrink: 0;
-  margin-top: 0.15rem;
 }
 
 .login-rejected {

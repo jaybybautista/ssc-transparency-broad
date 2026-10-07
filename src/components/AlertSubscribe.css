@@ -234,7 +234,11 @@
   font-weight: 600;
   color: var(--accent-text);
   cursor: pointer;
-  text-decoration: underline;
+  transition: color var(--transition-fast);
+}
+
+.alert-text-btn:hover {
+  color: var(--accent-text-strong);
 }
 
 .alert-text-btn.danger {

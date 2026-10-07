@@ -90,7 +90,7 @@ const Resolutions = () => {
   const handleDelete = async (id) => {
     const shouldDelete = await confirm({
       title: 'Delete resolution?',
-      message: 'This resolution will be permanently removed. This cannot be undone.',
+      message: 'This resolution comes off the site right away. You will have a few seconds to undo it.',
       confirmLabel: 'Delete',
       tone: 'danger'
     });
@@ -111,6 +111,14 @@ const Resolutions = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Checked explicitly rather than left to these inputs' `required`
+    // attribute: that native validation bubble anchors unreliably on a field
+    // inside this modal's fixed, scrolling layout, so a blank field could
+    // silently block the submit with no visible message.
+    if (!formData.title.trim() || !formData.description.trim() || !formData.date) {
+      notify('Please fill in the title, description and date before saving.');
+      return;
+    }
     setIsSaving(true);
 
     let uploadedUrls = [];
@@ -537,7 +545,7 @@ const Resolutions = () => {
                     onClick={async () => {
                       const shouldDelete = await confirm({
                         title: 'Delete resolution?',
-                        message: 'This resolution and its recorded votes will no longer appear on the site. This cannot be undone.',
+                        message: 'This resolution and its recorded votes come off the site right away. You will have a few seconds to undo it.',
                         confirmLabel: 'Delete',
                         tone: 'danger'
                       });
@@ -574,7 +582,6 @@ const Resolutions = () => {
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
                 />
               </div>
               <div className="form-group">
@@ -583,7 +590,6 @@ const Resolutions = () => {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows="4"
-                  required
                 />
               </div>
               <div className="form-group">
@@ -646,7 +652,6 @@ const Resolutions = () => {
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  required
                 />
               </div>
               <div className="form-group">
@@ -661,7 +666,7 @@ const Resolutions = () => {
               </div>
               <div className="form-group">
                 <p className="vote-notice" style={{ margin: 0 }}>
-                  Vote counts are no longer entered by hand — they are tallied live from verified
+                  Vote counts are no longer entered by hand. They are tallied live from verified
                   Google sign-ins. See <strong>Resolution Votes</strong> in the sidebar for the list of accounts.
                 </p>
               </div>

@@ -79,7 +79,7 @@ const AuthorPicker = ({ value, onChange, imageFile, onImageFileChange }) => {
                 {officers.map((officer) => (
                   <option key={officer.id} value={officer.id}>
                     {officer.name}
-                    {officer.position ? ` — ${officer.position}` : ''}
+                    {officer.position ? ` (${officer.position})` : ''}
                   </option>
                 ))}
               </select>

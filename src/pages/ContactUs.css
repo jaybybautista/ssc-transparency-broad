@@ -203,7 +203,7 @@
    Student Feedback & Query Portal
    =============================================================== */
 .portal-card {
-  background: var(--white);
+  background: var(--surface);
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);

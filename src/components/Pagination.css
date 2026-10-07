@@ -1,0 +1,92 @@
+/* Page controls for admin lists. Painted from tokens throughout, so dark mode
+   follows without a second set of rules. */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.pager-count {
+  margin: 0;
+  font-size: 0.83rem;
+  color: var(--gray-600);
+}
+
+.pager-count strong {
+  color: var(--gray-900);
+  font-weight: 700;
+}
+
+.pager-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.pager-step,
+.pager-page {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--gray-700);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.pager-step:hover:not(:disabled),
+.pager-page:hover:not(.is-current) {
+  background: var(--gray-100);
+  color: var(--gray-900);
+}
+
+.pager-step:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pager-page.is-current {
+  background: var(--primary-600);
+  border-color: var(--primary-600);
+  color: #fff;
+  cursor: default;
+}
+
+/* A ring drawn inside, so the row does not shift when tabbing through it. */
+.pager-step:focus-visible,
+.pager-page:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--primary-100);
+}
+
+.pager-gap {
+  padding: 0 0.15rem;
+  color: var(--gray-400);
+  letter-spacing: 0.1em;
+}
+
+@media (max-width: 640px) {
+  .pager {
+    justify-content: center;
+  }
+
+  .pager-count {
+    width: 100%;
+    text-align: center;
+  }
+}

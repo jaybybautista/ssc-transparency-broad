@@ -54,7 +54,7 @@ class ErrorBoundary extends React.Component {
         <h2>{scope ? `${scope} could not be displayed` : 'Something went wrong'}</h2>
         <p>
           {scope
-            ? 'The rest of the board is still working — you can go back and try another section.'
+            ? 'The rest of the board is still working, so you can go back and try another section.'
             : 'The page hit an unexpected error. Reloading usually clears it.'}
         </p>
 

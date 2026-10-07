@@ -1,21 +1,23 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FiMenu, FiChevronDown, FiUser, FiMail, FiArrowLeft } from 'react-icons/fi';
+import { Link, useLocation } from 'react-router-dom';
+import { FiMenu, FiChevronDown, FiUser, FiMail } from 'react-icons/fi';
 import { AuthContext } from '../../App';
 import { GlobalSearchButton } from '../GlobalSearch';
 import LanguageToggle from '../LanguageToggle';
 import { useLanguage } from '../../context/LanguageContext';
+import { useData } from '../../context/DataContext';
 import sscLogo from '../../assets/ssc_logo.svg';
 import psuLogo from '../../assets/psu_logo.svg';
+import { resolveLogo } from '../../lib/siteProfile';
 import './Navbar.css';
 
 const Navbar = ({ setSidebarOpen }) => {
   const [scrolled, setScrolled] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const location = useLocation();
-  const navigate = useNavigate();
   const { isAdmin } = useContext(AuthContext);
   const { t } = useLanguage();
+  const { siteProfile } = useData();
 
 
   useEffect(() => {
@@ -59,12 +61,12 @@ const Navbar = ({ setSidebarOpen }) => {
       <div className="navbar-container">
         <Link to="/" className="navbar-logo">
           <div className="logo-images">
-            <img src={psuLogo} alt="PSU Logo" className="logo-psu" />
-            <img src={sscLogo} alt="SSC Logo" className="logo-ssc" />
+            <img src={resolveLogo(siteProfile.psuLogoUrl, psuLogo)} alt="" className="logo-psu" />
+            <img src={resolveLogo(siteProfile.sscLogoUrl, sscLogo)} alt="" className="logo-ssc" />
           </div>
           <div className="logo-text">
-            <span className="logo-subtitle">PSU Urdaneta City Campus</span>
-            <span className="logo-title">Supreme Student Council</span>
+            <span className="logo-subtitle">{siteProfile.campusName}</span>
+            <span className="logo-title">{siteProfile.councilName}</span>
           </div>
         </Link>
 
@@ -116,18 +118,7 @@ const Navbar = ({ setSidebarOpen }) => {
             <span>{t('nav.contact')}</span>
           </Link>
           
-          {isAdmin ? (
-            <button 
-              className="return-user-btn"
-              // Goes to the public board without signing out — an officer
-              // checking how a page looks to students should not have to
-              // authenticate again to get back.
-              onClick={() => navigate('/')}
-            >
-              <FiArrowLeft />
-              <span>{t('nav.returnAsUser')}</span>
-            </button>
-          ) : (
+          {!isAdmin && (
             <Link
               to="/admin"
               className="admin-btn icon-only"

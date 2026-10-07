@@ -1,0 +1,455 @@
+/* ======================================================================
+   The officer directory.
+
+   These rules used to exist twice, in AboutSSC.css and Officers.css, under
+   the same class names. Both stylesheets load on every page, so the two
+   copies were not two independent designs: whichever came later in the
+   bundle won for both pages. That is how one page ended up with the other
+   page's column count. One definition now, no arbitration.
+   ====================================================================== */
+
+.officer-directory {
+  display: block;
+}
+
+.officer-term {
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--gray-100);
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--gray-600);
+  white-space: nowrap;
+}
+
+/* ---- finding somebody ---- */
+.officer-finder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.officer-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1 1 280px;
+  min-width: 0;
+  max-width: 420px;
+  padding: 0 0.75rem;
+  height: 40px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--gray-400);
+  transition: box-shadow 0.15s ease;
+}
+
+/* The ring goes on the wrapper, so the field cannot pick up the global 3px
+   focus outline and grow inside its own row. */
+.officer-search:focus-within {
+  box-shadow: 0 0 0 3px var(--primary-100);
+}
+
+.officer-search svg {
+  flex-shrink: 0;
+  font-size: 0.95rem;
+}
+
+.officer-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  color: var(--gray-900);
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.officer-search input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.officer-search > button {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--gray-500);
+  cursor: pointer;
+}
+
+.officer-search > button:hover {
+  background: var(--gray-100);
+  color: var(--gray-900);
+}
+
+.officer-divisions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.officer-division-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--gray-100);
+  color: var(--gray-700);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.officer-division-chip span {
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gray-600);
+}
+
+.officer-division-chip:hover {
+  background: var(--gray-200);
+  color: var(--gray-900);
+}
+
+.officer-division-chip.is-active {
+  background: var(--primary-600);
+  color: #fff;
+}
+
+.officer-division-chip.is-active span {
+  background: rgba(0, 0, 0, 0.28);
+  color: #fff;
+}
+
+.officer-division-chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--primary-100);
+}
+
+/* ---- sections ---- */
+.officer-section {
+  margin-bottom: 2.25rem;
+}
+
+.officer-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0 0 1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+
+/* A rule filling whatever the heading leaves, so the sections read as
+   sections without a heavy panel around each one. */
+.officer-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+}
+
+/* ---- the cards ---- */
+.officers-grid {
+  display: grid;
+  /* Neither the old 3 nor the old 4: the column count follows the space,
+     which is what let the two pages disagree in the first place. */
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.25rem;
+}
+
+/* A column, so that a two-line position on one card does not leave that
+   card's action bar sitting higher than its neighbours' in the same row. */
+.officer-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  animation: fadeSlideUp 0.5s ease backwards;
+}
+
+.officer-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-xl);
+}
+
+.officer-image {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+}
+
+.officer-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+
+.officer-card:hover .officer-image img {
+  transform: scale(1.05);
+}
+
+.officer-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 50%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 1rem;
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.officer-card:hover .officer-overlay,
+.officer-card:focus-within .officer-overlay {
+  opacity: 1;
+}
+
+.overlay-btn {
+  width: 40px;
+  height: 40px;
+  background: var(--surface);
+  color: var(--accent-text);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+}
+
+.overlay-btn:hover {
+  background: var(--primary-600);
+  color: #fff;
+  transform: scale(1.1);
+}
+
+.officer-info {
+  flex: 1;
+  padding: 1.1rem 1.15rem 1.25rem;
+}
+
+.officer-position {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--accent-text);
+  background: var(--primary-50);
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.officer-name {
+  font-size: 1.05rem;
+  color: var(--gray-900);
+  margin-bottom: 0.25rem;
+}
+
+/* The two copies disagreed here too, one using gray-500/gray-400 for these
+   lines. On a white card that is under 4.5:1, so the readable pair wins. */
+.officer-course {
+  font-size: 0.8rem;
+  color: var(--gray-700);
+  margin: 0;
+}
+
+.officer-year {
+  font-size: 0.75rem;
+  color: var(--gray-600);
+  margin: 0.15rem 0 0;
+}
+
+/* ---- arranging ---- */
+.officer-arrange-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--gray-700);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.officer-arrange-btn:hover {
+  background: var(--gray-100);
+  color: var(--gray-900);
+}
+
+.officer-arrange-btn.is-on {
+  background: var(--primary-600);
+  border-color: var(--primary-600);
+  color: #fff;
+}
+
+.officer-arrange-note {
+  margin: -0.5rem 0 1.25rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-lg);
+  background: var(--info-soft);
+  border: 1px solid var(--info-border);
+  font-size: 0.83rem;
+  line-height: 1.6;
+  color: var(--info-strong);
+}
+
+.officer-arrange {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-top: 1px solid var(--border-color);
+  background: var(--gray-50);
+}
+
+.officer-arrange button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--gray-700);
+  cursor: pointer;
+}
+
+.officer-arrange button:hover:not(:disabled) {
+  background: var(--primary-600);
+  border-color: var(--primary-600);
+  color: #fff;
+}
+
+.officer-arrange button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.officer-arrange-pos {
+  min-width: 1.6rem;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--gray-600);
+}
+
+/* ---- nothing found ---- */
+.officer-empty {
+  padding: 2rem;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  text-align: center;
+}
+
+.officer-empty h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+  color: var(--gray-900);
+}
+
+.officer-empty p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--gray-600);
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .officer-finder {
+    align-items: stretch;
+  }
+
+  .officer-search {
+    max-width: none;
+  }
+
+  .officers-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.9rem;
+  }
+
+  .officer-info {
+    padding: 0.85rem 0.9rem 1rem;
+  }
+}
+
+/* ---- dragging ---- */
+/* Scoped to beat `.officer-arrange button`, which is one class more specific
+   than a bare .officer-drag-handle and was keeping the plain pointer cursor. */
+.officer-arrange .officer-drag-handle {
+  /* Without this the browser claims the gesture and scrolls the page instead
+     of letting the drag happen. It is the whole reason a touch drag works. */
+  touch-action: none;
+  cursor: grab;
+}
+
+.officer-arrange .officer-drag-handle:active {
+  cursor: grabbing;
+  background: var(--primary-600);
+  border-color: var(--primary-600);
+  color: #fff;
+}
+
+.officer-card.is-dragging {
+  opacity: 0.55;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 2px var(--primary-200);
+}
+
+/* Nothing animates while a drag is in progress: the entrance fade would
+   replay on every card as the order changes under the finger. */
+.officers-grid.is-dragging-in .officer-card {
+  animation: none;
+  transition: none;
+}
+
+.officers-grid.is-dragging-in .officer-card:hover {
+  transform: none;
+}

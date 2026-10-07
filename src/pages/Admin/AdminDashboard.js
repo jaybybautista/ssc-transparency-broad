@@ -1,15 +1,10 @@
-import React, { useState, useContext, useEffect, useRef } from 'react';
+import React, { useState, useContext, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  FiGrid,
   FiBell,
   FiCalendar,
   FiFileText,
-  FiUsers,
-  FiClipboard,
-  FiAward,
   FiMail,
-  FiLogOut,
   FiPlus,
   FiEdit2,
   FiTrash2,
@@ -17,16 +12,7 @@ import {
   FiSearch,
   FiSave,
   FiX,
-  FiBook,
-  FiDownload,
-  FiCheckSquare,
-  FiBookOpen,
-  FiMenu,
-  FiInbox,
-  FiMessageSquare,
-  FiSend,
-  FiArchive,
-  FiClock
+  FiDownload
 } from 'react-icons/fi';
 import { AuthContext } from '../../App';
 import { useData } from '../../context/DataContext';
@@ -48,9 +34,16 @@ import AlertSubscribers from './AlertSubscribers';
 import AcademicYearSettings from './AcademicYearSettings';
 import AnnouncementDrafts from './AnnouncementDrafts';
 import AuditLog from './AuditLog';
+import SiteProfile from './SiteProfile';
 import DocumentViewerModal from '../../components/DocumentViewerModal';
-import sscLogo from '../../assets/ssc_logo.svg';
+import AdminSidebar from './AdminSidebar';
+import AdminTopbar from './AdminTopbar';
+import { findNavItem } from './adminNav';
+import { academicYearOf } from '../../lib/academicYear';
 import './AdminDashboard.css';
+
+/** Where the collapsed-rail preference is remembered. */
+const RAIL_KEY = 'ssc.admin.rail';
 
 const AdminDashboard = () => {
   const { adminEmail, signOutAdmin } = useContext(AuthContext);
@@ -67,11 +60,24 @@ const AdminDashboard = () => {
     deleteEvent,
     createResolution,
     updateResolution,
-    deleteResolution
+    deleteResolution,
+    selectedYear,
+    setSelectedYear,
+    tickets,
+    suggestions
   } = useData();
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // The rail is a preference, not a viewport rule: someone working through a
+  // wide table wants the width back and expects it to stay back next time.
+  const [railed, setRailed] = useState(() => {
+    try {
+      return window.localStorage.getItem(RAIL_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('');
   const [editItem, setEditItem] = useState(null);
@@ -129,6 +135,7 @@ const AdminDashboard = () => {
   const handleModalSubmit = async (event) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    let savedDate = null;
     try {
       if (modalType === 'announcement') {
         if (!richTextToPlain(modalRichText).trim()) {
@@ -155,6 +162,7 @@ const AdminDashboard = () => {
           isPinned: Boolean(editItem?.isPinned),
           imageUrls: [...eventImageUrls, ...uploadedUrls]
         };
+        savedDate = payload.date;
         if (editItem) {
           await updateAnnouncement(editItem.id, payload);
         } else {
@@ -184,6 +192,7 @@ const AdminDashboard = () => {
           description: modalRichText,
           imageUrls: [...eventImageUrls, ...uploadedUrls]
         };
+        savedDate = payload.date;
         if (editItem) {
           await updateEvent(editItem.id, payload);
         } else {
@@ -229,6 +238,7 @@ const AdminDashboard = () => {
           fileName: uploadedFileName,
           fileUrl: uploadedFileUrl
         };
+        savedDate = payload.date;
         if (editItem) {
           await updateResolution(editItem.id, payload);
         } else {
@@ -236,6 +246,19 @@ const AdminDashboard = () => {
         }
       }
       closeModal();
+
+      // Announcements, events and resolutions are all scoped server-side to
+      // the selected academic year (Aug-Jul), by date range on this same
+      // field. Saving one dated outside that window — most often next year's
+      // first item, added before the incoming council's year has formally
+      // started — used to leave every list on this page showing no change at
+      // all: the write succeeded, but nothing visible reflected it, which
+      // reads exactly like the button did nothing.
+      const savedYear = savedDate ? academicYearOf(savedDate) : '';
+      if (savedYear && savedYear !== selectedYear) {
+        setSelectedYear(savedYear);
+        notify(`Saved. This date falls in A.Y. ${savedYear}, so the view has switched to show it.`);
+      }
     } catch (error) {
       notify('Save failed. Please verify Firebase settings/rules and try again.');
     }
@@ -245,7 +268,7 @@ const AdminDashboard = () => {
     const label = { announcement: 'announcement', event: 'event', resolution: 'resolution' }[type] || 'item';
     const shouldDelete = await confirm({
       title: `Delete ${label}?`,
-      message: `This ${label} will be permanently removed. This cannot be undone.`,
+      message: `This ${label} comes off the site right away. You will have a few seconds to undo it.`,
       confirmLabel: 'Delete',
       tone: 'danger'
     });
@@ -273,26 +296,35 @@ const AdminDashboard = () => {
     { label: 'Pending Requests', value: 5, icon: FiMail, color: 'orange' }
   ];
 
-  const sidebarItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: FiGrid },
-    { id: 'announcements', label: 'Announcements', icon: FiBell },
-    { id: 'drafts', label: 'Drafts & Scheduled', icon: FiEdit2 },
-    { id: 'events', label: 'Calendar Events', icon: FiCalendar },
-    { id: 'resolutions', label: 'Resolutions', icon: FiFileText },
-    { id: 'resolution-votes', label: 'Resolution Votes', icon: FiCheckSquare },
-    { id: 'constitution', label: 'Constitution & By-Laws', icon: FiBookOpen },
-    { id: 'officers', label: 'Officers', icon: FiUsers },
-    { id: 'mom', label: 'Minutes of Meeting', icon: FiClipboard },
-    { id: 'narrative-reports', label: 'Narrative Reports', icon: FiBook },
-    { id: 'memorandums', label: 'Memorandum Orders', icon: FiFileText },
-    { id: 'accomplishments', label: 'Accomplishments', icon: FiAward },
-    { id: 'requests', label: 'Request Letters', icon: FiMail },
-    { id: 'tickets', label: 'Student Tickets', icon: FiInbox },
-    { id: 'suggestions', label: 'Suggestion Box', icon: FiMessageSquare },
-    { id: 'subscribers', label: 'Alert Subscribers', icon: FiSend },
-    { id: 'academic-year', label: 'Academic Year', icon: FiArchive },
-    { id: 'audit-log', label: 'Activity Log', icon: FiClock }
-  ];
+  const toggleRail = () => {
+    setRailed((wasRailed) => {
+      const next = !wasRailed;
+      try {
+        window.localStorage.setItem(RAIL_KEY, next ? '1' : '0');
+      } catch {
+        /* A browser with storage blocked still collapses, it just forgets. */
+      }
+      return next;
+    });
+  };
+
+  // Only the queues where something is waiting on a person get a count. A
+  // number on every item is wallpaper; a number on two is a signal.
+  const badges = useMemo(
+    () => ({
+      tickets: (tickets || []).filter((ticket) => ticket.status === 'new').length,
+      suggestions: (suggestions || []).filter((entry) => entry.status === 'new').length
+    }),
+    [tickets, suggestions]
+  );
+
+  const current = findNavItem(activeSection);
+
+  const topNote = {
+    announcements: `${announcements.length} published`,
+    events: `${events.length} scheduled`,
+    resolutions: `${resolutions.length} on file`
+  }[activeSection];
 
   const renderDashboard = () => (
     <div className="dashboard-content">
@@ -659,6 +691,8 @@ const AdminDashboard = () => {
         return <AcademicYearSettings />;
       case 'audit-log':
         return <AuditLog />;
+      case 'site-profile':
+        return <SiteProfile />;
       default:
         return renderDashboard();
     }
@@ -975,70 +1009,34 @@ const AdminDashboard = () => {
   );
 
   return (
-    <div className="admin-dashboard">
-      {/* Backdrop for the mobile drawer */}
+    <div className={`admin-dashboard${railed ? ' is-railed' : ''}`}>
+      {/* Backdrop for the drawer below 1024px */}
       <div
-        className={`admin-sidebar-overlay ${sidebarOpen ? 'active' : ''}`}
+        className={`admin-sidebar-overlay${sidebarOpen ? ' is-open' : ''}`}
         onClick={() => setSidebarOpen(false)}
       />
 
-      <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <img src={sscLogo} alt="SSC Logo" className="admin-logo" />
-          <span className="admin-title">PSU-UCC Admin</span>
-          <button
-            className="sidebar-close-btn"
-            onClick={() => setSidebarOpen(false)}
-            aria-label="Close menu"
-          >
-            <FiX />
-          </button>
-        </div>
-
-        <nav className="sidebar-nav">
-          {sidebarItems.map(item => (
-            <button
-              key={item.id}
-              className={`nav-item ${activeSection === item.id ? 'active' : ''}`}
-              onClick={() => {
-                setActiveSection(item.id);
-                setSidebarOpen(false);
-              }}
-            >
-              <item.icon />
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </nav>
-
-        <div className="sidebar-footer">
-          <button className="logout-btn" onClick={handleLogout}>
-            <FiLogOut />
-            <span>Logout</span>
-          </button>
-        </div>
-      </aside>
+      <AdminSidebar
+        activeSection={activeSection}
+        onSelect={setActiveSection}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        collapsed={railed}
+        adminEmail={adminEmail}
+        onLogout={handleLogout}
+        badges={badges}
+        academicYear={selectedYear}
+      />
 
       <main className="admin-main">
-        <header className="admin-header">
-          <div className="header-left">
-            <button
-              className="admin-menu-btn"
-              onClick={() => setSidebarOpen(true)}
-              aria-label="Open menu"
-              aria-expanded={sidebarOpen}
-            >
-              <FiMenu />
-            </button>
-            <h1>{sidebarItems.find(item => item.id === activeSection)?.label || 'Dashboard'}</h1>
-          </div>
-          <div className="header-right">
-            <div className="admin-user" title={adminEmail}>
-              <div className="user-avatar">{(adminEmail || 'A').charAt(0).toUpperCase()}</div>
-              <span className="user-name">{adminEmail || 'Admin'}</span>
-            </div>
-          </div>
-        </header>
+        <AdminTopbar
+          title={current?.label || 'Dashboard'}
+          group={current?.group}
+          subtitle={topNote}
+          collapsed={railed}
+          onToggleCollapse={toggleRail}
+          onOpenMenu={() => setSidebarOpen(true)}
+        />
 
         <div className="admin-content">
           {renderContent()}

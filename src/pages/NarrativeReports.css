@@ -1,3 +1,24 @@
+/* ------------------------------------------------------------------
+   The page's teal accent, as tokens.
+
+   These were literal hexes, so the EVENT tag and the info banner kept their
+   light-mode teal on a dark card. The foreground is also a step darker than
+   the original #0d9488, which failed contrast against its own background.
+   ------------------------------------------------------------------ */
+.narrative-page {
+  --nr-accent-bg: #ccfbf1;
+  --nr-accent-fg: #0f766e;
+  --nr-accent-border: #5eead4;
+  --nr-accent-icon-bg: rgba(13, 148, 136, 0.15);
+}
+
+:root[data-theme='dark'] .narrative-page {
+  --nr-accent-bg: #10312c;
+  --nr-accent-fg: #5eead4;
+  --nr-accent-border: #1c4d45;
+  --nr-accent-icon-bg: rgba(94, 234, 212, 0.14);
+}
+
 /* Narrative Reports Page Styles */
 
 .narrative-page {
@@ -9,10 +30,10 @@
   align-items: flex-start;
   gap: 1.5rem;
   padding: 1.75rem;
-  background: linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%);
+  background: var(--nr-accent-bg);
   border-radius: var(--radius-xl);
   margin-bottom: 2.5rem;
-  border: 1px solid #5eead4;
+  border: 1px solid var(--nr-accent-border);
 }
 
 .narrative-info .info-icon {
@@ -23,8 +44,8 @@
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
-  background: rgba(13, 148, 136, 0.15);
-  color: #0d9488;
+  background: var(--nr-accent-icon-bg);
+  color: var(--nr-accent-fg);
   border-radius: var(--radius-lg);
 }
 
@@ -73,8 +94,8 @@
 .report-type {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #0d9488;
-  background: #ccfbf1;
+  color: var(--nr-accent-fg);
+  background: var(--nr-accent-bg);
   padding: 0.35rem 0.75rem;
   border-radius: var(--radius-full);
   text-transform: uppercase;
@@ -105,10 +126,11 @@
 }
 
 .report-stats {
-  margin-bottom: 1.25rem;
-  padding: 1rem;
+  margin-bottom: 0.9rem;
+  padding: 0.55rem 0.75rem;
   background: var(--gray-50);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
 }
 
 .report-stats .stat {
@@ -154,19 +176,20 @@
   justify-content: center;
   gap: 0.5rem;
   width: 100%;
-  background: #2563eb;
-  color: white;
-  border: none;
+  background: var(--primary-600);
+  color: #fff;
+  border: 1px solid transparent;
   padding: 0.6rem 1rem;
-  border-radius: 6px;
+  border-radius: 8px;
+  font-family: inherit;
   font-size: 0.85rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .see-more-btn:hover {
-  background: var(--info-strong-alt);
+  background: var(--primary-700);
 }
 
 /* Modal Styles */
@@ -513,49 +536,75 @@
   background: var(--primary-700);
 }
 
-.report-actions-row {
+/* Three buttons abreast never fitted a card this narrow: "See More" wrapped
+   onto two lines and stood taller than the other two, which is what made the
+   row look ragged. One primary action on its own line, and the two document
+   actions sharing the line below, all at the same height. */
+.report-actions {
   display: flex;
-  gap: 0.6rem;
-  align-items: center;
+  flex-direction: column;
+  gap: 0.5rem;
   margin-top: auto;
   padding-top: 1rem;
 }
 
-.report-actions-row .see-more-btn {
-  flex: 1;
+.report-doc-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
 }
 
 .report-download-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
   padding: 0.6rem 0.9rem;
-  background: #059669;
-  color: white;
-  border-radius: 6px;
+  /* Matches the primary button above, which picks this height up from the
+     shared control sizing in global.css. */
+  min-height: var(--ui-control-height);
+  /* Tokens, not literals: the old #059669 stayed put in dark mode while
+     everything around it moved. */
+  background: var(--success-soft);
+  color: var(--success-strong-alt);
+  border: 1px solid var(--success-border);
+  border-radius: 8px;
+  font-family: inherit;
   font-size: 0.82rem;
-  font-weight: 500;
+  font-weight: 600;
+  cursor: pointer;
   text-decoration: none;
-  transition: background 0.2s;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
   white-space: nowrap;
+  min-width: 0;
 }
 
 .report-download-btn:hover {
-  background: #047857;
+  background: var(--success-border);
 }
 
+/* Neutral on purpose: this only names the attachment, while the buttons below
+   are what you act on. In teal it competed with them for attention. */
 .report-file-badge {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 0.4rem;
+  max-width: 100%;
   padding: 0.3rem 0.7rem;
-  background: #ccfbf1;
-  color: #0d9488;
-  border-radius: 20px;
+  background: var(--gray-100);
+  color: var(--gray-600);
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
   font-size: 0.76rem;
   font-weight: 500;
-  margin-bottom: 0.6rem;
-  border: 1px solid #5eead4;
+  margin-bottom: 0.75rem;
+}
+
+/* A long filename used to push the card wider than its grid column. */
+.report-file-badge span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .report-file-badge svg {
@@ -568,8 +617,8 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.25rem;
-  background: #f0fdf4;
-  border: 1px solid #86efac;
+  background: var(--success-soft);
+  border: 1px solid var(--success-border);
   border-radius: 10px;
 }
 

@@ -853,7 +853,7 @@
 }
 
 .vote-signout:hover {
-  text-decoration: underline;
+  color: var(--accent-text-strong);
 }
 
 .vote-notice {

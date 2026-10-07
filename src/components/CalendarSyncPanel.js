@@ -122,7 +122,7 @@ const CalendarSyncPanel = ({ events = [] }) => {
       {!!lastExport && (
         <p className="sync-confirmation">
           <FiRefreshCw /> Exported at {lastExport}. Open the downloaded file to add the
-          activities — come back and download again whenever the calendar changes.
+          activities. Come back and download again whenever the calendar changes.
         </p>
       )}
 

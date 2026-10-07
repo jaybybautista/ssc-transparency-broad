@@ -419,7 +419,7 @@
   font-size: 0.9rem;
   font-family: inherit;
   color: var(--gray-800);
-  background: var(--white);
+  background: var(--surface);
   cursor: pointer;
 }
 
@@ -985,4 +985,80 @@
   .event-modal-actions-hint {
     display: none;
   }
+}
+
+/* ---- Upcoming / Past switch in the events sidebar ---- */
+.events-tabs {
+  display: flex;
+  gap: 0.3rem;
+  padding: 0.25rem;
+  margin-bottom: 1rem;
+  background: var(--gray-100);
+  border-radius: 10px;
+}
+
+.events-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.6rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gray-600);
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.events-tab:hover { color: var(--gray-900); }
+
+.events-tab.active {
+  background: var(--surface);
+  color: var(--accent-text);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.events-tab-count {
+  min-width: 20px;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  background: var(--gray-200);
+  color: var(--gray-600);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.events-tab.active .events-tab-count {
+  background: var(--info-soft);
+  color: var(--accent-text);
+}
+
+/* An activity that has already happened is still worth reading, just not
+   competing for attention with the ones students can still turn up to. */
+.event-card.is-past .event-card-content { opacity: 0.82; }
+.event-card.is-past:hover .event-card-content { opacity: 1; }
+
+.events-show-more {
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.6rem;
+  border: 1px dashed var(--gray-300);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--accent-text);
+  font-family: inherit;
+  font-size: 0.83rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.events-show-more:hover {
+  background: var(--gray-50);
+  border-color: var(--primary-500);
 }

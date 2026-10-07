@@ -1,0 +1,128 @@
+/* Sits above the admin modals (1000-1200) and the year sheet, because a delete
+   is usually triggered from inside one of them and the offer to undo has to be
+   visible where it happened. */
+.undo-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+  z-index: 1800;
+
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  max-width: min(560px, calc(100vw - 2rem));
+  padding: 0.85rem 0.9rem 0.85rem 1rem;
+
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid var(--gray-700, #374151);
+  background: var(--gray-900, #111827);
+  color: #fff;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.35);
+
+  animation: undoToastIn 0.18s ease;
+}
+
+@keyframes undoToastIn {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .undo-toast { animation: none; }
+}
+
+.undo-toast-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 0.95rem;
+}
+
+.undo-toast-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.undo-toast-text strong { font-weight: 600; }
+.undo-toast-text span { color: rgba(255, 255, 255, 0.72); font-size: 0.8rem; }
+.undo-toast-error { color: #fca5a5 !important; }
+
+.undo-toast-action {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+  padding: 0.5rem 0.85rem;
+  border: none;
+  border-radius: 9px;
+  background: var(--primary-500, #068df8);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.83rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.undo-toast-action:hover:not(:disabled) { background: var(--primary-600, #0570c6); }
+.undo-toast-action:disabled { opacity: 0.65; cursor: default; }
+
+.undo-toast-close {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+
+.undo-toast-close:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+/* The countdown. Anchored left and scaled, so it costs no layout work. */
+.undo-toast-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  transform-origin: left center;
+  background: var(--primary-500, #068df8);
+  transition: transform 0.25s linear;
+}
+
+@media (max-width: 560px) {
+  .undo-toast {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    max-width: none;
+    transform: none;
+    flex-wrap: wrap;
+  }
+
+  @keyframes undoToastIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .undo-toast-action { margin-left: 0; }
+  .undo-toast-text { flex: 1 1 100%; order: -1; }
+}

@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FiAlertCircle, FiArrowLeft, FiLogOut, FiShield } from 'react-icons/fi';
 import { FcGoogle } from 'react-icons/fc';
 import { useVoterAuth } from '../../context/VoterAuthContext';
+import { insecureOriginMessage, isSecureOriginForAuth } from '../../lib/authEnvironment';
 import sscLogo from '../../assets/ssc_logo.svg';
 import psuLogo from '../../assets/psu_logo.svg';
 import './AdminLogin.css';
@@ -22,9 +23,16 @@ import './AdminLogin.css';
  * straight to the database, not just against this screen.
  */
 const AdminLogin = () => {
-  const { voter, signIn, signOut, isSscAdmin, isCheckingAdmin, isAuthLoading, authError } = useVoterAuth();
+  const { voter, signIn, signOut, isSscAdmin, isCheckingAdmin, isAuthLoading, authError, authNotice } = useVoterAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const navigate = useNavigate();
+
+  // Shown on arrival rather than only after a failed tap, so nobody wonders
+  // why the button did nothing. It does not disable anything.
+  const originNotice = useMemo(
+    () => (isSecureOriginForAuth(window.location) ? '' : insecureOriginMessage(window.location)),
+    []
+  );
 
   // Already verified — go straight through.
   useEffect(() => {
@@ -68,6 +76,14 @@ const AdminLogin = () => {
             </div>
           )}
 
+          {/* A caution, not a refusal: the button below still works. */}
+          {!!(authNotice || originNotice) && (
+            <div className="notice-message">
+              <FiAlertCircle />
+              <span>{authNotice || originNotice}</span>
+            </div>
+          )}
+
           {isRejected ? (
             <>
               <div className="login-rejected">
@@ -97,11 +113,6 @@ const AdminLogin = () => {
                 <FcGoogle />
                 {isBusy ? 'Checking your access…' : 'Sign in with Google'}
               </button>
-
-              <p className="login-note">
-                <FiShield /> Access is granted per account by the database itself, not by a
-                shared password — so it can be revoked instantly and cannot be passed around.
-              </p>
             </>
           )}
         </div>

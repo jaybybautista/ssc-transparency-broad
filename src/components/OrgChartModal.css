@@ -1,0 +1,69 @@
+/* The poster dialog. Styles live with the component so both the public
+   officers page and the admin copy get them from one place. */
+
+.orgchart-modal-overlay {
+  /* A chart is tall; give it the height a centred dialog would waste. */
+  align-items: flex-start;
+  padding: 1.5rem 1rem;
+  overflow-y: auto;
+}
+.orgchart-modal-overlay {
+  /* A chart is tall; give it the height a centred dialog would waste. */
+  align-items: flex-start;
+  padding: 1.5rem 1rem;
+  overflow-y: auto;
+}
+.orgchart-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.1rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+.orgchart-modal-head h3 {
+  margin: 0;
+  font-size: 1.02rem;
+  color: var(--gray-900);
+}
+.orgchart-modal-body {
+  padding: 1rem;
+  /* The image is the point, so it gets a neutral mat rather than the card
+     colour, which would blend into a white poster. */
+  background: var(--gray-100);
+  text-align: center;
+}
+.orgchart-modal-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+
+/* The trigger. Kept with the dialog it opens, so the public officers page
+   and the admin copy both get it from the same import. */
+.view-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.orgchart-open-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: var(--ui-control-height);
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--ui-control-radius);
+  background: var(--surface);
+  color: var(--accent-text);
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+.orgchart-open-btn:hover {
+  border-color: var(--primary-500);
+  background: var(--info-soft);
+}

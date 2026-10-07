@@ -191,7 +191,7 @@ const AnnouncementDrafts = () => {
           Drafts are stored where only signed-in officers can read them, so an unpublished post is
           genuinely private rather than just hidden. <strong>Scheduling caveat:</strong> the board
           has no server of its own, so a scheduled post goes live the next time an officer opens
-          this page after its time — same day in practice, but not to the minute. For anything that
+          this page after its time, so the same day in practice, but not to the minute. For anything that
           must not be seen a moment early, leave it a draft and publish it by hand.
         </span>
       </p>
