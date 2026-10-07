@@ -2,6 +2,7 @@ import React, { useState, useContext, useRef } from 'react';
 import { FiClipboard, FiUsers, FiMapPin, FiCalendar, FiFileText, FiEye, FiX, FiEdit2, FiTrash2, FiPlus, FiDownload } from 'react-icons/fi';
 import { AuthContext } from '../App';
 import { useData } from '../context/DataContext';
+import ContentLoader from '../components/ContentLoader';
 import useModalBehaviour from '../components/useModalBehaviour';
 import { useDialog } from '../components/DialogProvider';
 import { uploadImages, uploadFiles, downloadDocument } from '../lib/uploads';
@@ -21,7 +22,8 @@ const MOM = () => {
   const { t } = useLanguage();
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
-  const { meetings, createMeeting, updateMeeting, deleteMeeting, getViewCount: getSharedViewCount, trackView} = useData();
+  const { meetings, createMeeting, updateMeeting, deleteMeeting, getViewCount: getSharedViewCount, trackView, isCollectionLoading } = useData();
+  const isLoadingList = isCollectionLoading('meetings');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [viewerFile, setViewerFile] = useState(null);
@@ -266,6 +268,8 @@ const MOM = () => {
             No meeting records match <strong>"{searchTerm}"</strong>.
           </div>
         )}
+
+        {isLoadingList && <ContentLoader variant="list" count={3} />}
 
         <div className="mom-list">
           {visibleMeetings.map((meeting, index) => (

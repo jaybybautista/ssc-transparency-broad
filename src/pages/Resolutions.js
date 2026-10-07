@@ -2,6 +2,7 @@ import React, { useState, useContext, useRef } from 'react';
 import { FiFileText, FiCheckCircle, FiClock, FiThumbsUp, FiThumbsDown, FiMinus, FiEye, FiX, FiCalendar, FiEdit2, FiTrash2, FiPlus, FiDownload, FiLock, FiLogIn, FiUser } from 'react-icons/fi';
 import { AuthContext } from '../App';
 import { useData } from '../context/DataContext';
+import ContentLoader from '../components/ContentLoader';
 import useModalBehaviour from '../components/useModalBehaviour';
 import { useDialog } from '../components/DialogProvider';
 import { useVoterAuth } from '../context/VoterAuthContext';
@@ -25,7 +26,8 @@ const Resolutions = () => {
     castResolutionVote,
     retractResolutionVote,
     getResolutionTally,
-    getMyResolutionVote, getViewCount: getSharedViewCount, trackView} = useData();
+    getMyResolutionVote, getViewCount: getSharedViewCount, trackView, isCollectionLoading } = useData();
+  const isLoadingList = isCollectionLoading('resolutions');
   const { voter, signIn, signOut, authError, isVotingAvailable, allowedVoteDomains: voteDomains } = useVoterAuth();
   const [voteError, setVoteError] = useState('');
   const [isVoting, setIsVoting] = useState(false);
@@ -267,6 +269,8 @@ const Resolutions = () => {
             <p>Resolutions are formal expressions of the opinion or will of the Student Supreme Council. Each resolution undergoes deliberation and voting before being passed.</p>
           </div>
         </div>
+
+        {isLoadingList && <ContentLoader variant="list" count={3} />}
 
         <div className="resolutions-list">
           {resolutions.map((resolution, index) => (

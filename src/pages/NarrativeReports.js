@@ -2,6 +2,7 @@ import React, { useState, useContext, useRef } from 'react';
 import { FiBook, FiCalendar, FiUsers, FiFileText, FiEye, FiX, FiEdit2, FiTrash2, FiPlus, FiDownload } from 'react-icons/fi';
 import { AuthContext } from '../App';
 import { useData } from '../context/DataContext';
+import ContentLoader from '../components/ContentLoader';
 import useModalBehaviour from '../components/useModalBehaviour';
 import { useDialog } from '../components/DialogProvider';
 import { uploadFiles, uploadImages, downloadDocument } from '../lib/uploads';
@@ -21,7 +22,8 @@ const NarrativeReports = () => {
   const { t } = useLanguage();
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
-  const { narrativeReports: reports, createNarrativeReport, updateNarrativeReport, deleteNarrativeReport, getViewCount: getSharedViewCount, trackView} = useData();
+  const { narrativeReports: reports, createNarrativeReport, updateNarrativeReport, deleteNarrativeReport, getViewCount: getSharedViewCount, trackView, isCollectionLoading } = useData();
+  const isLoadingList = isCollectionLoading('narrativeReports');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   const [viewerFile, setViewerFile] = useState(null);
@@ -275,6 +277,8 @@ const NarrativeReports = () => {
             No reports match <strong>"{searchTerm}"</strong>.
           </div>
         )}
+
+        {isLoadingList && <ContentLoader variant="cards" count={3} />}
 
         <div className="reports-grid">
           {visibleReports.map((report, index) => (

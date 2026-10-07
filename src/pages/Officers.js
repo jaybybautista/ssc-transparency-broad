@@ -2,6 +2,7 @@ import React, { useContext, useState, useRef, useEffect } from 'react';
 import { FiPlus, FiX } from 'react-icons/fi';
 import { AuthContext } from '../App';
 import { useData } from '../context/DataContext';
+import ContentLoader from '../components/ContentLoader';
 import useModalBehaviour from '../components/useModalBehaviour';
 import { useDialog } from '../components/DialogProvider';
 import { uploadImages } from '../lib/uploads';
@@ -17,7 +18,8 @@ const Officers = () => {
   const { t } = useLanguage();
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
-  const { officers, createOfficer, updateOfficer, deleteOfficer, reorderOfficers, selectedYear, availableYears, siteProfile } = useData();
+  const { officers, createOfficer, updateOfficer, deleteOfficer, reorderOfficers, selectedYear, availableYears, siteProfile, isCollectionLoading } = useData();
+  const isLoadingList = isCollectionLoading('officers');
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [selectedImageFile, setSelectedImageFile] = useState(null);
@@ -175,23 +177,27 @@ const Officers = () => {
       </div>
 
       <div className="container section">
-        {!officers.length && (
+        {isLoadingList && <ContentLoader variant="people" count={4} />}
+
+        {!isLoadingList && !officers.length && (
           <div className="officers-message">
             <h3>{t('off.none')}</h3>
             <p>Add officers from the admin form and they will appear here automatically.</p>
           </div>
         )}
 
-        <OfficerDirectory
-          officers={officers}
-          orgChartUrl={siteProfile.orgChartUrl}
-          academicYear={selectedYear}
-          isAdmin={isAdmin}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onReorder={handleReorder}
-          headingLevel="h2"
-        />
+        {!isLoadingList && (
+          <OfficerDirectory
+            officers={officers}
+            orgChartUrl={siteProfile.orgChartUrl}
+            academicYear={selectedYear}
+            isAdmin={isAdmin}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onReorder={handleReorder}
+            headingLevel="h2"
+          />
+        )}
 
 
         {/* Message from SSC */}

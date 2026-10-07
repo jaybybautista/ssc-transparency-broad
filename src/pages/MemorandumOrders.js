@@ -2,6 +2,7 @@ import React, { useState, useContext, useRef } from 'react';
 import { FiFileText, FiCalendar, FiClock, FiDownload, FiEdit2, FiTrash2, FiPlus, FiX } from 'react-icons/fi';
 import { AuthContext } from '../App';
 import { useData } from '../context/DataContext';
+import ContentLoader from '../components/ContentLoader';
 import useModalBehaviour from '../components/useModalBehaviour';
 import { useDialog } from '../components/DialogProvider';
 import { uploadFiles, downloadDocument } from '../lib/uploads';
@@ -19,7 +20,8 @@ const MemorandumOrders = () => {
   const { t } = useLanguage();
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
-  const { memorandums: memos, createMemorandum, updateMemorandum, deleteMemorandum } = useData();
+  const { memorandums: memos, createMemorandum, updateMemorandum, deleteMemorandum, isCollectionLoading } = useData();
+  const isLoadingList = isCollectionLoading('memorandums');
   const [viewerMemo, setViewerMemo] = useState(null);
   const [readMemo, setReadMemo] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -190,6 +192,8 @@ const MemorandumOrders = () => {
             No memorandums match <strong>"{searchTerm}"</strong>.
           </div>
         )}
+
+        {isLoadingList && <ContentLoader variant="list" count={3} />}
 
         <div className="memos-container">
           {visibleMemos.map((memo, index) => (

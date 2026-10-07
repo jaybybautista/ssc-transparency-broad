@@ -2,6 +2,7 @@ import React, { useState, useContext , useRef } from 'react';
 import { FiFilter, FiBell, FiAward, FiCreditCard, FiAlertCircle, FiInfo, FiSearch, FiEdit2, FiTrash2, FiPlus, FiX, FiCalendar } from 'react-icons/fi';
 import { AuthContext } from '../App';
 import { useData } from '../context/DataContext';
+import ContentLoader from '../components/ContentLoader';
 import { uploadImages } from '../lib/uploads';
 import useModalBehaviour from '../components/useModalBehaviour';
 import { useDialog } from '../components/DialogProvider';
@@ -23,8 +24,9 @@ const Announcements = () => {
     createAnnouncement,
     updateAnnouncement,
     deleteAnnouncement,
-    isLoading
+    isCollectionLoading
   } = useData();
+  const isLoadingList = isCollectionLoading('announcements');
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -214,7 +216,7 @@ const Announcements = () => {
 
         {/* Results Count */}
         <div className="results-info">
-          <span>{isLoading ? 'Loading announcements...' : `Showing ${filteredAnnouncements.length} announcement${filteredAnnouncements.length !== 1 ? 's' : ''}`}</span>
+          <span>{isLoadingList ? `${t('common.loading')}…` : `Showing ${filteredAnnouncements.length} announcement${filteredAnnouncements.length !== 1 ? 's' : ''}`}</span>
           {activeFilter !== 'All' && (
             <button className="clear-filter" onClick={() => setActiveFilter('All')}>
               {t('common.clearFilter')}
@@ -281,7 +283,9 @@ const Announcements = () => {
         {/* Regular Announcements */}
         <div className="announcements-section">
           {pinnedAnnouncements.length > 0 && <h2 className="section-label">{t('ann.recent')}</h2>}
-          {regularAnnouncements.length > 0 ? (
+          {isLoadingList ? (
+            <ContentLoader variant="list" count={3} />
+          ) : regularAnnouncements.length > 0 ? (
             <div className="announcements-list">
               {regularAnnouncements.map((announcement) => {
                 const IconComponent = categoryIcons[announcement.category] || FiBell;

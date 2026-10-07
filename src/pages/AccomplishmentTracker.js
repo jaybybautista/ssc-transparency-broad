@@ -25,6 +25,7 @@ import RichTextEditor from '../components/RichTextEditor';
 import { richTextToPlain } from '../components/richText';
 import ImageCarousel from '../components/ImageCarousel';
 import LoadMore from '../components/LoadMore';
+import ContentLoader from '../components/ContentLoader';
 import { useLanguage } from '../context/LanguageContext';
 import {
   ACCOMPLISHMENT_STATUSES,
@@ -70,8 +71,10 @@ const AccomplishmentTracker = () => {
     deleteAccomplishment,
     getViewCount: getSharedViewCount,
     trackView,
-    hasMore
+    hasMore,
+    isCollectionLoading
   } = useData();
+  const isLoadingList = isCollectionLoading('accomplishments');
 
   const [filter, setFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -368,7 +371,8 @@ const AccomplishmentTracker = () => {
               >
                 {chip.key !== 'all' && getStatusIcon(chip.key)}
                 <span>{chip.text}</span>
-                <span className="acc-chip-count">{chip.count}</span>
+                {/* A count of 0 before the records arrive would be wrong. */}
+                {!isLoadingList && <span className="acc-chip-count">{chip.count}</span>}
               </button>
             ))}
           </div>
@@ -407,6 +411,8 @@ const AccomplishmentTracker = () => {
             No accomplishments match <strong>"{searchTerm}"</strong>.
           </div>
         )}
+
+        {isLoadingList && <ContentLoader variant="list" count={3} />}
 
         {/* Grouped by month, so a term reads as a sequence rather than a pile */}
         <div>

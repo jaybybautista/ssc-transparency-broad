@@ -54,6 +54,7 @@ const mockData = {
   getViewCount: () => 7,
   trackView: jest.fn(),
   hasMore: { accomplishments: false },
+  isCollectionLoading: () => false,
   selectedYear: '2025-2026',
   siteProfile: { councilName: 'Supreme Student Council', campusName: 'PSU Urdaneta City Campus' }
 };
@@ -189,6 +190,32 @@ describe('evidence', () => {
     const link = container.querySelector('.acc-evidence-btn');
     expect(link.getAttribute('href')).toBe('https://facebook.com/PSUurdanetaSSC/posts/1');
     expect(link.textContent).toContain('View the Facebook post');
+  });
+});
+
+describe('while the records are still on their way', () => {
+  const render = (loading) => {
+    mockData.isCollectionLoading = () => loading;
+    act(() => root.render(<AccomplishmentTracker key={String(loading)} />));
+  };
+
+  afterEach(() => {
+    mockData.isCollectionLoading = () => false;
+  });
+
+  it('shows the loader instead of counting zero', () => {
+    render(true);
+    expect(container.querySelector('.content-loader[role="status"]')).toBeTruthy();
+    expect(container.textContent).toContain('Loading');
+    // A chip reading "All 0" would claim the council has done nothing.
+    expect(container.querySelectorAll('.acc-chip-count')).toHaveLength(0);
+  });
+
+  it('drops the loader once they arrive', () => {
+    render(true);
+    render(false);
+    expect(container.querySelector('.content-loader')).toBeNull();
+    expect(container.querySelectorAll('.accomplishment-card')).toHaveLength(4);
   });
 });
 

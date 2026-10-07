@@ -2,6 +2,7 @@ import React, { useContext, useState, useRef } from 'react';
 import { FiFileText, FiPackage, FiHome, FiDollarSign, FiAward, FiUsers, FiChevronDown, FiChevronUp, FiDownload, FiEye, FiPlus, FiEdit2, FiTrash2, FiX } from 'react-icons/fi';
 import { AuthContext } from '../App';
 import { useData } from '../context/DataContext';
+import ContentLoader from '../components/ContentLoader';
 import useModalBehaviour from '../components/useModalBehaviour';
 import { useDialog } from '../components/DialogProvider';
 import { uploadFiles, downloadDocument } from '../lib/uploads';
@@ -14,7 +15,8 @@ const RequestLetters = () => {
   const { t } = useLanguage();
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
-  const { requestTypes, createRequestType, updateRequestType, deleteRequestType } = useData();
+  const { requestTypes, createRequestType, updateRequestType, deleteRequestType, isCollectionLoading } = useData();
+  const isLoadingList = isCollectionLoading('requestTypes');
   const [expandedType, setExpandedType] = useState(null);
   const [viewerFile, setViewerFile] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -194,6 +196,8 @@ const RequestLetters = () => {
             No request types match <strong>"{searchTerm}"</strong>.
           </div>
         )}
+
+        {isLoadingList && <ContentLoader variant="cards" count={3} />}
 
         <div className="request-types">
           {visibleRequestTypes.map((requestType) => {

@@ -436,7 +436,23 @@ export const DataProvider = ({ children }) => {
   const [drafts, setDrafts] = useState([]);
   const [auditLog, setAuditLog] = useState([]);
   const [viewCounts, setViewCounts] = useState({});
-  const [isLoading, setIsLoading] = useState(isFirebaseEnabled);
+  /**
+   * Which collections have received their first answer from Firestore.
+   *
+   * Until a listener reports, its array is empty, and an empty array on screen
+   * reads as "the council has posted nothing". Pages ask isCollectionLoading()
+   * so they can show a placeholder instead. A failed listener also counts as
+   * answered, so a broken connection ends in the error message rather than a
+   * placeholder that never goes away.
+   */
+  const [loadedCollections, setLoadedCollections] = useState({});
+  const markLoaded = (key) =>
+    setLoadedCollections((prev) => (prev[key] ? prev : { ...prev, [key]: true }));
+  const isCollectionLoading = useCallback(
+    (key) => isFirebaseEnabled && !!db && !loadedCollections[key],
+    [loadedCollections]
+  );
+  const isLoading = PUBLIC_COLLECTIONS.some((config) => isCollectionLoading(config.key));
   const [error, setError] = useState('');
 
   /**
@@ -578,7 +594,6 @@ export const DataProvider = ({ children }) => {
 
   useEffect(() => {
     if (!isFirebaseEnabled || !db) {
-      setIsLoading(false);
       return undefined;
     }
 
@@ -647,8 +662,12 @@ export const DataProvider = ({ children }) => {
           const list = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
           setters[config.key](sortFn ? [...list].sort(sortFn) : list);
           setHasMore((prev) => ({ ...prev, [config.key]: snapshot.size >= cap }));
+          markLoaded(config.key);
         },
-        () => setError(`Failed to load ${config.label} from cloud database.`)
+        () => {
+          setError(`Failed to load ${config.label} from cloud database.`);
+          markLoaded(config.key);
+        }
       );
     });
 
@@ -670,8 +689,6 @@ export const DataProvider = ({ children }) => {
       () => setError('Failed to load resolution votes from cloud database.')
     );
 
-    setIsLoading(false);
-
     return () => {
       unsubscribers.forEach((unsubscribe) => unsubscribe());
       unsubResolutionVotes();
@@ -681,9 +698,18 @@ export const DataProvider = ({ children }) => {
     // resubscribe every listener with the new bounds.
   }, [limits, selectedYear, isSscAdmin, activeYear]);
 
-  // Switching year starts that year's browsing from the first page again.
+  // Switching year starts that year's browsing from the first page again, and
+  // shows the placeholder rather than the previous year's records until the new
+  // year's arrive.
   useEffect(() => {
     setLimits(PUBLIC_COLLECTIONS.reduce((acc, config) => ({ ...acc, [config.key]: PAGE_SIZE }), {}));
+    setLoadedCollections((prev) => {
+      const next = { ...prev };
+      PUBLIC_COLLECTIONS.forEach((config) => {
+        if (config.yearScoped) delete next[config.key];
+      });
+      return next;
+    });
   }, [selectedYear]);
 
   /**
@@ -1484,6 +1510,7 @@ export const DataProvider = ({ children }) => {
       memorandums,
       narrativeReports,
       isLoading,
+      isCollectionLoading,
       error,
       isCloudMode: isFirebaseEnabled,
       // Paging: `hasMore.announcements` is true while more may exist,
@@ -1575,7 +1602,7 @@ export const DataProvider = ({ children }) => {
       getResolutionTally,
       getMyResolutionVote
     }),
-    [announcements, events, resolutions, officers, meetings, accomplishments, requestTypes, memorandums, narrativeReports, constitutionDocs, resolutionVotes, voteTallies, tickets, suggestions, subscribers, isLoading, error, hasMore, selectedYear, activeYear, availableYears, officersForYear, drafts, auditLog, viewCounts, isSscAdmin, hasChosenYear, undoableDelete, siteProfile]
+    [announcements, events, resolutions, officers, meetings, accomplishments, requestTypes, memorandums, narrativeReports, constitutionDocs, resolutionVotes, voteTallies, tickets, suggestions, subscribers, isLoading, isCollectionLoading, error, hasMore, selectedYear, activeYear, availableYears, officersForYear, drafts, auditLog, viewCounts, isSscAdmin, hasChosenYear, undoableDelete, siteProfile]
   );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

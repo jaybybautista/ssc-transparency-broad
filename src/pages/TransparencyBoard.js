@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiFileText, FiArrowRight, FiBell, FiAward, FiCreditCard, FiAlertCircle, FiInfo, FiEye, FiX, FiCalendar, FiClock } from 'react-icons/fi';
 import { useData } from '../context/DataContext';
+import ContentLoader from '../components/ContentLoader';
 import { useLanguage } from '../context/LanguageContext';
 import './TransparencyBoard.css';
 
@@ -14,7 +15,8 @@ const TransparencyBoard = () => {
     announcements,
     memorandums,
     getViewCount: getSharedViewCount,
-    trackView
+    trackView,
+    isCollectionLoading
   } = useData();
 
   const pinnedAnnouncements = announcements.filter((a) => a.isPinned);
@@ -110,6 +112,7 @@ const TransparencyBoard = () => {
             </Link>
           </div>
 
+          {isCollectionLoading('announcements') && <ContentLoader variant="cards" count={3} />}
           <div className="pinned-grid">
             {pinnedAnnouncements.map((announcement) => {
               const IconComponent = categoryIcons[announcement.category] || FiBell;
@@ -154,6 +157,7 @@ const TransparencyBoard = () => {
             </Link>
           </div>
 
+          {isCollectionLoading('memorandums') && <ContentLoader variant="list" count={3} />}
           <div className="memos-list">
             {recentMemos.map((memo) => (
               <div key={memo.id} className="memo-card" onClick={() => openModal(memo, 'memo')}>
