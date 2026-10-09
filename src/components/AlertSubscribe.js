@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { FiAlertTriangle, FiBell, FiCheck, FiInfo, FiMail, FiX } from 'react-icons/fi';
 import { useData, isValidEmail } from '../context/DataContext';
 import useModalBehaviour from './useModalBehaviour';
@@ -240,12 +241,6 @@ const AlertSubscribe = ({ onClose }) => {
                     </button>
                   )}
                 </div>
-
-                <p className="alert-privacy">
-                  Your address is used only for the alerts you pick and is never shown publicly
-                  or shared outside the SSC. Messages go out with everyone in BCC, so no other
-                  student sees your address.
-                </p>
               </form>
             )}
           </section>
@@ -274,7 +269,10 @@ export const AlertSubscribeButton = ({ label = 'Notify me' }) => {
         {prefs.email ? <span className="trigger-dot" /> : <FiBell />}
         {prefs.email ? 'Alerts on' : label}
       </button>
-      {open && <AlertSubscribe onClose={close} />}
+      {/* Rendered into <body>: the button sits inside a page header, whose
+          white header text and layout would otherwise leak into the dialog
+          (the intro paragraph came out white on white). */}
+      {open && createPortal(<AlertSubscribe onClose={close} />, document.body)}
     </>
   );
 };

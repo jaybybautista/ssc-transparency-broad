@@ -7,7 +7,7 @@ import useModalBehaviour from './useModalBehaviour';
 import './YearWheel.css';
 
 const ITEM_HEIGHT = 46;
-const VISIBLE_ITEMS = 5;
+const MAX_VISIBLE_ITEMS = 5;
 
 /**
  * iOS-style scrolling year picker.
@@ -25,6 +25,11 @@ const VISIBLE_ITEMS = 5;
 const YearWheel = ({ onClose }) => {
   const { selectedYear, setSelectedYear, availableYears, currentYear } = useData();
   const years = availableYears?.length ? availableYears : [currentYear];
+  // Only as tall as the years need: one year shows one row, not a five-row
+  // wheel that is mostly empty and pushes the buttons off a phone screen.
+  // Always odd, so the selection sits in the middle.
+  const visibleItems = Math.min(MAX_VISIBLE_ITEMS, years.length * 2 - 1);
+  const spacerHeight = ITEM_HEIGHT * ((visibleItems - 1) / 2);
 
   const listRef = useRef(null);
   const dialogRef = useRef(null);
@@ -101,13 +106,13 @@ const YearWheel = ({ onClose }) => {
           <FiArchive />
           <div>
             <h3>Academic year</h3>
-            <p>Browse another council&rsquo;s term. Nothing is deleted when a year ends.</p>
+            <p>Browse another council&rsquo;s term.</p>
           </div>
         </header>
 
         <div
           className="yw-wheel"
-          style={{ height: ITEM_HEIGHT * VISIBLE_ITEMS }}
+          style={{ height: ITEM_HEIGHT * visibleItems }}
           onKeyDown={onKeyDown}
           tabIndex={0}
           role="listbox"
@@ -117,9 +122,9 @@ const YearWheel = ({ onClose }) => {
           {/* The lit band the selection settles into. */}
           <div className="yw-highlight" style={{ height: ITEM_HEIGHT }} aria-hidden="true" />
 
-          <div className="yw-list" ref={listRef} onScroll={handleScroll}>
+          <div className={`yw-list${visibleItems === 1 ? ' yw-list--single' : ''}`} ref={listRef} onScroll={handleScroll}>
             {/* Spacers so the first and last entries can reach the middle. */}
-            <div style={{ height: ITEM_HEIGHT * ((VISIBLE_ITEMS - 1) / 2) }} aria-hidden="true" />
+            {!!spacerHeight && <div style={{ height: spacerHeight }} aria-hidden="true" />}
 
             {years.map((year, itemIndex) => {
               const distance = Math.abs(itemIndex - index);
@@ -146,7 +151,7 @@ const YearWheel = ({ onClose }) => {
               );
             })}
 
-            <div style={{ height: ITEM_HEIGHT * ((VISIBLE_ITEMS - 1) / 2) }} aria-hidden="true" />
+            {!!spacerHeight && <div style={{ height: spacerHeight }} aria-hidden="true" />}
           </div>
         </div>
 

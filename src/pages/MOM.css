@@ -221,6 +221,9 @@
   background: #f0fdf4;
   border: 1px solid #86efac;
   border-radius: 10px;
+  /* The buttons drop to their own row on a narrow screen instead of
+     squeezing the name down to one letter per line. */
+  flex-wrap: wrap;
 }
 
 .modal-file-download .file-icon {
@@ -230,7 +233,8 @@
 }
 
 .modal-file-download .file-name {
-  flex: 1;
+  flex: 1 1 10rem;
+  min-width: 0;
   font-size: 0.88rem;
   font-weight: 500;
   color: var(--success-strong-alt);
@@ -254,6 +258,19 @@
 
 .modal-file-download .btn:hover {
   background: var(--success-strong-alt);
+}
+
+@media (max-width: 480px) {
+  .modal-file-download {
+    gap: 0.6rem;
+    padding: 0.9rem 1rem;
+  }
+
+  .modal-file-download .btn {
+    flex: 1;
+    justify-content: center;
+    padding: 0.55rem 0.75rem;
+  }
 }
 
 /* MOM Card Enhancements */

@@ -1,9 +1,9 @@
-/* Both selectors, so this beats the base .modal-overlay padding on specificity
-   rather than on source order — otherwise the sheet floats above the bottom
-   edge instead of sitting on it. */
+/* Centred on every screen size. As a sheet pinned to the bottom edge, a
+   phone browser's bottom toolbar covered Cancel and View. Both selectors, so
+   this beats the base .modal-overlay padding on specificity. */
 .modal-overlay.year-wheel-overlay {
-  align-items: flex-end;
-  padding: 0;
+  align-items: center;
+  padding: 1rem;
 }
 
 .year-wheel {
@@ -12,14 +12,16 @@
   padding: 1.25rem 1.25rem 1.1rem;
   background: var(--surface);
   border: 1px solid var(--gray-200);
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -12px 40px rgba(15, 23, 42, 0.3);
-  animation: yw-rise 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+  border-radius: 20px;
+  box-shadow: var(--shadow-2xl);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  animation: yw-fade 0.18s ease-out;
 }
 
-@keyframes yw-rise {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+@keyframes yw-fade {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .yw-head {
@@ -81,6 +83,11 @@
   /* Fades the ends, so entries appear to roll away over a curve. */
   -webkit-mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
   mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+}
+
+.yw-list--single {
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 
 .yw-list::-webkit-scrollbar {
@@ -150,25 +157,9 @@
 }
 
 .yw-confirm {
+  /* Wider than Cancel, so "View A.Y. 2025-2026" stays on one line on a phone. */
+  flex: 1.6;
+  white-space: nowrap;
   background: var(--bg-gradient);
   color: #fff;
-}
-
-/* Centred like a normal dialog once there is room for it. */
-@media (min-width: 640px) {
-  .modal-overlay.year-wheel-overlay {
-    align-items: center;
-    padding: 2rem;
-  }
-
-  .year-wheel {
-    border-radius: 20px;
-    box-shadow: var(--shadow-2xl);
-    animation: yw-fade 0.18s ease-out;
-  }
-
-  @keyframes yw-fade {
-    from { opacity: 0; transform: translateY(10px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
 }
