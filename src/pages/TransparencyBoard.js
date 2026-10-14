@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiFileText, FiArrowRight, FiBell, FiAward, FiCreditCard, FiAlertCircle, FiInfo, FiEye, FiX, FiCalendar, FiClock } from 'react-icons/fi';
-import { useData } from '../context/DataContext';
+import { useData, useCollections } from '../context/DataContext';
 import ContentLoader from '../components/ContentLoader';
 import { useLanguage } from '../context/LanguageContext';
 import './TransparencyBoard.css';
@@ -18,6 +18,7 @@ const TransparencyBoard = () => {
     trackView,
     isCollectionLoading
   } = useData();
+  useCollections('announcements', 'memorandums');
 
   const pinnedAnnouncements = announcements.filter((a) => a.isPinned);
   const recentMemos = memorandums.slice(0, 3);

@@ -59,8 +59,11 @@ const mockData = {
   siteProfile: { councilName: 'Supreme Student Council', campusName: 'PSU Urdaneta City Campus' }
 };
 
+const mockRequested = new Set();
+
 jest.mock('../context/DataContext', () => ({
   useData: () => mockData,
+  useCollections: (...keys) => keys.forEach((key) => mockRequested.add(key)),
   PAGE_SIZE: 60
 }));
 
@@ -98,6 +101,11 @@ afterEach(() => {
 const text = (selector) => [...container.querySelectorAll(selector)].map((el) => el.textContent.trim());
 
 describe('the accomplishments list', () => {
+  it('asks for its own records and nothing else', () => {
+    // Every page used to download every collection on the board.
+    expect([...mockRequested]).toEqual(['accomplishments']);
+  });
+
   it('renders a record that was saved without a status instead of crashing', () => {
     // The page used to call status.toLowerCase() straight on the record, so a
     // single document with no status took the whole list down.

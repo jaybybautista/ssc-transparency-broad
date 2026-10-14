@@ -15,7 +15,7 @@ import {
   FiUser
 } from 'react-icons/fi';
 import { AuthContext } from '../App';
-import { useData } from '../context/DataContext';
+import { useData, useCollections } from '../context/DataContext';
 import { uploadImages } from '../lib/uploads';
 import useModalBehaviour from '../components/useModalBehaviour';
 import { useDialog } from '../components/DialogProvider';
@@ -74,6 +74,7 @@ const AccomplishmentTracker = () => {
     hasMore,
     isCollectionLoading
   } = useData();
+  useCollections('accomplishments');
   const isLoadingList = isCollectionLoading('accomplishments');
 
   const [filter, setFilter] = useState('all');

@@ -1,7 +1,7 @@
 import React, { useState, useContext , useRef } from 'react';
 import { FiFilter, FiBell, FiAward, FiCreditCard, FiAlertCircle, FiInfo, FiSearch, FiEdit2, FiTrash2, FiPlus, FiX, FiCalendar } from 'react-icons/fi';
 import { AuthContext } from '../App';
-import { useData } from '../context/DataContext';
+import { useData, useCollections } from '../context/DataContext';
 import ContentLoader from '../components/ContentLoader';
 import { uploadImages } from '../lib/uploads';
 import useModalBehaviour from '../components/useModalBehaviour';
@@ -26,6 +26,7 @@ const Announcements = () => {
     deleteAnnouncement,
     isCollectionLoading
   } = useData();
+  useCollections('announcements');
   const isLoadingList = isCollectionLoading('announcements');
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');

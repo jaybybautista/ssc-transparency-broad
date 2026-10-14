@@ -1,7 +1,7 @@
 import React, { useState, useContext, useRef } from 'react';
 import { FiClipboard, FiUsers, FiMapPin, FiCalendar, FiFileText, FiEye, FiX, FiEdit2, FiTrash2, FiPlus, FiDownload } from 'react-icons/fi';
 import { AuthContext } from '../App';
-import { useData } from '../context/DataContext';
+import { useData, useCollections } from '../context/DataContext';
 import ContentLoader from '../components/ContentLoader';
 import useModalBehaviour from '../components/useModalBehaviour';
 import { useDialog } from '../components/DialogProvider';
@@ -23,6 +23,7 @@ const MOM = () => {
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
   const { meetings, createMeeting, updateMeeting, deleteMeeting, getViewCount: getSharedViewCount, trackView, isCollectionLoading } = useData();
+  useCollections('meetings');
   const isLoadingList = isCollectionLoading('meetings');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState(null);

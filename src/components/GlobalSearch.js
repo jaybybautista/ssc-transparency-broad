@@ -15,7 +15,7 @@ import {
   FiBookOpen,
   FiCornerDownLeft
 } from 'react-icons/fi';
-import { useData } from '../context/DataContext';
+import { useData, useCollections } from '../context/DataContext';
 import { richTextToPlain } from './richText';
 import { formatAcademicYear } from '../lib/academicYear';
 import useModalBehaviour from './useModalBehaviour';
@@ -65,6 +65,7 @@ const excerpt = (text, needle) => {
 
 const GlobalSearch = ({ onClose }) => {
   const data = useData();
+  useCollections(...SECTIONS.map((section) => section.key));
   const { selectedYear, hasMore } = data;
   const navigate = useNavigate();
 

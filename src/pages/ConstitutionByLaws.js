@@ -1,7 +1,7 @@
 import React, { useState, useContext, useRef } from 'react';
 import { FiBookOpen, FiCalendar, FiFileText, FiDownload, FiEdit2, FiTrash2, FiPlus, FiX, FiEye } from 'react-icons/fi';
 import { AuthContext } from '../App';
-import { useData } from '../context/DataContext';
+import { useData, useCollections } from '../context/DataContext';
 import ContentLoader from '../components/ContentLoader';
 import useModalBehaviour from '../components/useModalBehaviour';
 import { useDialog } from '../components/DialogProvider';
@@ -21,6 +21,7 @@ const ConstitutionByLaws = () => {
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
   const { constitutionDocs, createConstitutionDoc, updateConstitutionDoc, deleteConstitutionDoc, isCollectionLoading } = useData();
+  useCollections('constitution');
   const isLoadingList = isCollectionLoading('constitution');
   const [viewerDoc, setViewerDoc] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');

@@ -1,4 +1,4 @@
-import { collection, doc, increment, onSnapshot, setDoc } from 'firebase/firestore';
+import { collection, doc, getDocs, increment, query, setDoc, where } from 'firebase/firestore';
 import { db, isFirebaseEnabled } from './firebase';
 
 /**
@@ -47,13 +47,14 @@ const saveSeen = (set) => {
 /**
  * Registers a view, unless this browser has already counted this item.
  * Fire-and-forget: a failed count must never interrupt opening a post.
+ * Returns true when it counted, so the caller can show the new number.
  */
 export const registerView = (collectionName, id) => {
-  if (!isFirebaseEnabled || !db || !id) return;
+  if (!isFirebaseEnabled || !db || !id) return false;
 
   const key = viewDocId(collectionName, id);
   const seen = loadSeen();
-  if (seen.has(key)) return;
+  if (seen.has(key)) return false;
 
   seen.add(key);
   saveSeen(seen);
@@ -65,24 +66,31 @@ export const registerView = (collectionName, id) => {
   ).catch(() => {
     // Most likely the rules are not deployed yet. Silent by design.
   });
+  return true;
 };
 
 /**
- * Subscribes to every counter. One listener for the whole board rather than one
- * per item — the collection holds a single small document per post.
+ * Reads the counters for one section, once.
+ *
+ * This used to be a live listener on every counter on the board, held open by
+ * every visitor. Each new view was then pushed to everyone online and billed as
+ * a read for each of them, so the cost grew with the square of the audience.
+ * A page now reads its own section's counts when it opens; the visitor's own
+ * views are added locally (see registerView's return value).
  */
-export const subscribeToViewCounts = (onChange) => {
-  if (!isFirebaseEnabled || !db) return () => {};
+export const fetchViewCounts = async (collectionName) => {
+  if (!isFirebaseEnabled || !db) return {};
 
-  return onSnapshot(
-    collection(db, 'views'),
-    (snapshot) => {
-      const counts = {};
-      snapshot.docs.forEach((item) => {
-        counts[item.id] = item.data()?.count || 0;
-      });
-      onChange(counts);
-    },
-    () => onChange({})
-  );
+  try {
+    const snapshot = await getDocs(
+      query(collection(db, 'views'), where('collectionName', '==', collectionName))
+    );
+    const counts = {};
+    snapshot.docs.forEach((item) => {
+      counts[item.id] = item.data()?.count || 0;
+    });
+    return counts;
+  } catch (error) {
+    return {};
+  }
 };

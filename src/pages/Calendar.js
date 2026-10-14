@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
 import { FiChevronLeft, FiChevronRight, FiMapPin, FiClock, FiCalendar, FiFilter, FiCheck, FiChevronDown, FiEye, FiX, FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
 import { AuthContext } from '../App';
-import { useData } from '../context/DataContext';
+import { useData, useCollections } from '../context/DataContext';
 import ContentLoader from '../components/ContentLoader';
 import useModalBehaviour from '../components/useModalBehaviour';
 import { useDialog } from '../components/DialogProvider';
@@ -36,6 +36,7 @@ const Calendar = () => {
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
   const { events, createEvent, updateEvent, deleteEvent, getViewCount: getSharedViewCount, trackView, selectedYear, setSelectedYear, isYearScoped, hasChosenYear, isCollectionLoading } = useData();
+  useCollections('events');
   const isLoadingList = isCollectionLoading('events');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);

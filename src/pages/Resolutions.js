@@ -1,7 +1,7 @@
 import React, { useState, useContext, useRef } from 'react';
 import { FiFileText, FiCheckCircle, FiClock, FiThumbsUp, FiThumbsDown, FiMinus, FiEye, FiX, FiCalendar, FiEdit2, FiTrash2, FiPlus, FiDownload, FiLock, FiLogIn, FiUser } from 'react-icons/fi';
 import { AuthContext } from '../App';
-import { useData } from '../context/DataContext';
+import { useData, useCollections } from '../context/DataContext';
 import ContentLoader from '../components/ContentLoader';
 import useModalBehaviour from '../components/useModalBehaviour';
 import { useDialog } from '../components/DialogProvider';
@@ -27,6 +27,7 @@ const Resolutions = () => {
     retractResolutionVote,
     getResolutionTally,
     getMyResolutionVote, getViewCount: getSharedViewCount, trackView, isCollectionLoading } = useData();
+  useCollections('resolutions', 'resolutionVotes');
   const isLoadingList = isCollectionLoading('resolutions');
   const { voter, signIn, signOut, authError, isVotingAvailable, allowedVoteDomains: voteDomains } = useVoterAuth();
   const [voteError, setVoteError] = useState('');

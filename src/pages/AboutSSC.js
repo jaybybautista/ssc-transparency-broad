@@ -1,6 +1,6 @@
 import React from 'react';
 import { FiTarget, FiHeart, FiStar, FiCheckCircle } from 'react-icons/fi';
-import { useData } from '../context/DataContext';
+import { useData, useCollections } from '../context/DataContext';
 import ContentLoader from '../components/ContentLoader';
 import OfficerDirectory from '../components/OfficerDirectory';
 import '../components/OfficerListView.css';
@@ -10,6 +10,7 @@ import './AboutSSC.css';
 const AboutSSC = () => {
   const { t } = useLanguage();
   const { officers, siteProfile, selectedYear, isCollectionLoading } = useData();
+  useCollections('officers');
   return (
     <div className="about-ssc-page">
       <div className="page-header">

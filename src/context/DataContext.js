@@ -30,7 +30,7 @@ import { db, isFirebaseEnabled } from '../lib/firebase';
 import { ALERT_TOPICS } from '../lib/notifications';
 import { deleteRecordFiles } from '../lib/uploads';
 import { recordAudit } from '../lib/auditLog';
-import { registerView, subscribeToViewCounts, viewDocId } from '../lib/viewCounts';
+import { fetchViewCounts, registerView, viewDocId } from '../lib/viewCounts';
 import {
   academicYearBounds,
   academicYearOf,
@@ -346,6 +346,31 @@ export const PAGE_SIZE = 60;
  *     always the fetch order: events are fetched newest-first so the limit keeps
  *     upcoming activities, then flipped to chronological for the calendar.
  */
+/**
+ * Each collection's first page. Officers carry their own larger size; seeding
+ * every key with PAGE_SIZE used to override it, capping officers at 60.
+ */
+const initialLimits = () =>
+  PUBLIC_COLLECTIONS.reduce(
+    (acc, config) => ({ ...acc, [config.key]: config.pageSize ?? PAGE_SIZE }),
+    {}
+  );
+
+/** Where each browser remembers the earliest academic year, and for how long. */
+const EARLIEST_YEAR_KEY = 'ssc.earliestYear';
+const EARLIEST_YEAR_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** Sections whose posts show a view count. */
+const VIEW_COUNTED = new Set([
+  'announcements',
+  'memorandums',
+  'events',
+  'resolutions',
+  'meetings',
+  'narrativeReports',
+  'accomplishments'
+]);
+
 const PUBLIC_COLLECTIONS = [
   { key: 'announcements', orderField: 'date', direction: 'desc', label: 'announcements', yearScoped: true },
   {
@@ -452,16 +477,34 @@ export const DataProvider = ({ children }) => {
     (key) => isFirebaseEnabled && !!db && !loadedCollections[key],
     [loadedCollections]
   );
-  const isLoading = PUBLIC_COLLECTIONS.some((config) => isCollectionLoading(config.key));
+  /**
+   * The collections some mounted page has asked for (see useCollections).
+   *
+   * Listeners used to open for every collection the moment anyone loaded any
+   * page, so the home page downloaded every officer photo, meeting and report
+   * on the board. Now each page names what it shows, and only that is fetched.
+   * A collection stays subscribed for the rest of the visit once asked for, so
+   * moving between pages does not download it again.
+   */
+  const [requested, setRequested] = useState(() => new Set());
+  const requestCollections = useCallback((keys) => {
+    setRequested((prev) => {
+      if (keys.every((key) => prev.has(key))) return prev;
+      const next = new Set(prev);
+      keys.forEach((key) => next.add(key));
+      return next;
+    });
+  }, []);
+  const isLoading = PUBLIC_COLLECTIONS.some(
+    (config) => requested.has(config.key) && isCollectionLoading(config.key)
+  );
   const [error, setError] = useState('');
 
   /**
    * Per-collection fetch ceiling. Raised by loadMore(), which re-subscribes that
    * one listener with a larger limit.
    */
-  const [limits, setLimits] = useState(() =>
-    PUBLIC_COLLECTIONS.reduce((acc, config) => ({ ...acc, [config.key]: PAGE_SIZE }), {})
-  );
+  const [limits, setLimits] = useState(initialLimits);
 
   /**
    * True when a collection's last snapshot filled its limit exactly, i.e. there
@@ -592,9 +635,12 @@ export const DataProvider = ({ children }) => {
     setSelectedYear(year);
   };
 
+  // Open listeners, keyed by collection, with the query each was opened for.
+  const listenersRef = useRef({});
+
   useEffect(() => {
     if (!isFirebaseEnabled || !db) {
-      return undefined;
+      return;
     }
 
     const setters = {
@@ -612,7 +658,9 @@ export const DataProvider = ({ children }) => {
 
     const byNewestDate = (field) => (a, b) => new Date(b[field]) - new Date(a[field]);
 
-    const unsubscribers = PUBLIC_COLLECTIONS.map((config) => {
+    PUBLIC_COLLECTIONS.forEach((config) => {
+      if (!requested.has(config.key)) return;
+
       const cap = limits[config.key] ?? config.pageSize ?? PAGE_SIZE;
 
       /*
@@ -641,6 +689,14 @@ export const DataProvider = ({ children }) => {
           ? academicYearBounds(selectedYear, { openEnded: selectedYear === activeYear })
           : null;
 
+      // Only a listener whose query actually changed is replaced. Re-opening
+      // all of them whenever one page asked for one more collection would
+      // download everything already on screen a second time.
+      const signature = JSON.stringify([cap, bounds]);
+      const current = listenersRef.current[config.key];
+      if (current && current.signature === signature) return;
+      current?.unsubscribe();
+
       // orderBy would drop documents missing the field, so collections without a
       // date get a bare cap instead.
       const constraints = config.orderField
@@ -656,7 +712,7 @@ export const DataProvider = ({ children }) => {
 
       const sortFn = config.sort || (config.orderField ? byNewestDate(config.orderField) : null);
 
-      return onSnapshot(
+      const unsubscribe = onSnapshot(
         query(collection(db, config.key), ...constraints),
         (snapshot) => {
           const list = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
@@ -669,6 +725,7 @@ export const DataProvider = ({ children }) => {
           markLoaded(config.key);
         }
       );
+      listenersRef.current[config.key] = { signature, unsubscribe };
     });
 
     /*
@@ -680,29 +737,47 @@ export const DataProvider = ({ children }) => {
      * collection most likely to grow large, and the real fix is a maintained
      * counter per resolution (or a server-side aggregation query) rather than
      * truncating the source. Until then, correctness wins over payload size.
+     * Opened only once the resolutions page (or the dashboard) asks for it.
      */
-    const unsubResolutionVotes = onSnapshot(
-      collection(db, 'resolutionVotes'),
-      (snapshot) => {
-        setResolutionVotes(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })));
-      },
-      () => setError('Failed to load resolution votes from cloud database.')
-    );
-
-    return () => {
-      unsubscribers.forEach((unsubscribe) => unsubscribe());
-      unsubResolutionVotes();
-    };
+    if (requested.has('resolutionVotes') && !listenersRef.current.resolutionVotes) {
+      listenersRef.current.resolutionVotes = {
+        signature: 'all',
+        unsubscribe: onSnapshot(
+          collection(db, 'resolutionVotes'),
+          (snapshot) => {
+            setResolutionVotes(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })));
+          },
+          () => setError('Failed to load resolution votes from cloud database.')
+        )
+      };
+    }
     // activeYear belongs here: it decides whether the shown year is the running
     // term (open-ended) or a closed archive, so declaring a new year has to
-    // resubscribe every listener with the new bounds.
-  }, [limits, selectedYear, isSscAdmin, activeYear]);
+    // resubscribe every year-scoped listener with the new bounds.
+  }, [requested, limits, selectedYear, isSscAdmin, activeYear]);
+
+  // Close every listener when the provider goes away.
+  useEffect(
+    () => () => {
+      Object.values(listenersRef.current).forEach((listener) => listener.unsubscribe());
+      listenersRef.current = {};
+    },
+    []
+  );
+
+  // The dashboard shows and edits everything, so a signed-in admin gets every
+  // collection rather than each section asking for its own.
+  useEffect(() => {
+    if (isSscAdmin) {
+      requestCollections([...PUBLIC_COLLECTIONS.map((config) => config.key), 'resolutionVotes']);
+    }
+  }, [isSscAdmin, requestCollections]);
 
   // Switching year starts that year's browsing from the first page again, and
   // shows the placeholder rather than the previous year's records until the new
   // year's arrive.
   useEffect(() => {
-    setLimits(PUBLIC_COLLECTIONS.reduce((acc, config) => ({ ...acc, [config.key]: PAGE_SIZE }), {}));
+    setLimits(initialLimits());
     setLoadedCollections((prev) => {
       const next = { ...prev };
       PUBLIC_COLLECTIONS.forEach((config) => {
@@ -717,11 +792,27 @@ export const DataProvider = ({ children }) => {
    * actually have something in them.
    *
    * One ascending, single-document query per dated collection — a handful of
-   * reads, once per session, against the hundreds this used to spend loading
-   * every collection in full on every page load.
+   * reads, against the hundreds this used to spend loading every collection in
+   * full on every page load.
+   *
+   * The client SDK cannot fetch only the date, so each of those queries brings
+   * a whole record, photos included (about 2 MB together while photos live in
+   * the documents). The answer barely ever changes, so each browser keeps it
+   * for a week. The cost of a stale answer is a backdated older year taking up
+   * to a week to appear in that visitor's year switcher.
    */
   useEffect(() => {
     if (!isFirebaseEnabled || !db) return;
+
+    try {
+      const cached = JSON.parse(localStorage.getItem(EARLIEST_YEAR_KEY) || 'null');
+      if (cached?.year && Date.now() - cached.at < EARLIEST_YEAR_TTL_MS) {
+        setEarliestYear(cached.year);
+        return;
+      }
+    } catch (error) {
+      /* unreadable or blocked storage: ask the server */
+    }
 
     let cancelled = false;
 
@@ -750,7 +841,14 @@ export const DataProvider = ({ children }) => {
       const earliestDate = oldest.filter(Boolean).sort()[0];
       if (earliestDate) {
         const year = academicYearOf(earliestDate);
-        if (year) setEarliestYear(year);
+        if (year) {
+          setEarliestYear(year);
+          try {
+            localStorage.setItem(EARLIEST_YEAR_KEY, JSON.stringify({ year, at: Date.now() }));
+          } catch (error) {
+            /* storage full or blocked: asked again next visit */
+          }
+        }
       }
     })();
 
@@ -797,7 +895,23 @@ export const DataProvider = ({ children }) => {
   }, [activeYear]);
 
   // Shared view counts. Public, like the tallies they resemble.
-  useEffect(() => subscribeToViewCounts(setViewCounts), []);
+  // Each section's view counts are read once, when a page first asks for that
+  // section, instead of every visitor holding a live feed of every counter.
+  const fetchedViewCountsRef = useRef(new Set());
+  useEffect(() => {
+    requested.forEach((key) => {
+      if (!VIEW_COUNTED.has(key) || fetchedViewCountsRef.current.has(key)) return;
+      fetchedViewCountsRef.current.add(key);
+      fetchViewCounts(key).then((counts) => setViewCounts((prev) => ({ ...prev, ...counts })));
+    });
+  }, [requested]);
+
+  // The visitor's own first view of a post shows up straight away.
+  const trackView = useCallback((collectionName, id) => {
+    if (!registerView(collectionName, id)) return;
+    const key = viewDocId(collectionName, id);
+    setViewCounts((prev) => ({ ...prev, [key]: (prev[key] || 0) + 1 }));
+  }, []);
 
   /** Newest first, current year at the top. */
   const availableYears = useMemo(
@@ -1586,7 +1700,8 @@ export const DataProvider = ({ children }) => {
       // Shared read counts. getViewCount reads, trackView records one.
       viewCounts,
       getViewCount: (collectionName, id) => viewCounts[viewDocId(collectionName, id)] || 0,
-      trackView: registerView,
+      trackView,
+      requestCollections,
       drafts,
       saveDraft,
       deleteDraft,
@@ -1602,7 +1717,7 @@ export const DataProvider = ({ children }) => {
       getResolutionTally,
       getMyResolutionVote
     }),
-    [announcements, events, resolutions, officers, meetings, accomplishments, requestTypes, memorandums, narrativeReports, constitutionDocs, resolutionVotes, voteTallies, tickets, suggestions, subscribers, isLoading, isCollectionLoading, error, hasMore, selectedYear, activeYear, availableYears, officersForYear, drafts, auditLog, viewCounts, isSscAdmin, hasChosenYear, undoableDelete, siteProfile]
+    [announcements, events, resolutions, officers, meetings, accomplishments, requestTypes, memorandums, narrativeReports, constitutionDocs, resolutionVotes, voteTallies, tickets, suggestions, subscribers, isLoading, isCollectionLoading, requestCollections, trackView, error, hasMore, selectedYear, activeYear, availableYears, officersForYear, drafts, auditLog, viewCounts, isSscAdmin, hasChosenYear, undoableDelete, siteProfile]
   );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
@@ -1614,4 +1729,20 @@ export const useData = () => {
     throw new Error('useData must be used within DataProvider');
   }
   return context;
+};
+
+/**
+ * Declares which collections a page shows, so only those are fetched.
+ *
+ *   useCollections('accomplishments');
+ *
+ * Until the first answer arrives, isCollectionLoading(key) stays true and the
+ * page shows its placeholder.
+ */
+export const useCollections = (...keys) => {
+  const { requestCollections } = useData();
+  const signature = keys.join('|');
+  useEffect(() => {
+    requestCollections(signature.split('|'));
+  }, [requestCollections, signature]);
 };

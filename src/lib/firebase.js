@@ -1,7 +1,12 @@
 import { initializeApp } from 'firebase/app';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager
+} from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
@@ -59,7 +64,17 @@ if (isFirebaseEnabled) {
     }
   }
 
-  db = getFirestore(app);
+  // Keeps a copy of what was fetched in the browser (IndexedDB), shared across
+  // tabs. Pages draw from it straight away on a return visit, and a listener
+  // that reconnects asks the server only for what changed. Where IndexedDB is
+  // unavailable (some private windows), fall back to the in-memory default.
+  try {
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+    });
+  } catch (error) {
+    db = getFirestore(app);
+  }
   storage = getStorage(app);
   auth = getAuth(app);
 }

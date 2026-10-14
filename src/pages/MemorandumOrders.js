@@ -1,7 +1,7 @@
 import React, { useState, useContext, useRef } from 'react';
 import { FiFileText, FiCalendar, FiClock, FiDownload, FiEdit2, FiTrash2, FiPlus, FiX } from 'react-icons/fi';
 import { AuthContext } from '../App';
-import { useData } from '../context/DataContext';
+import { useData, useCollections } from '../context/DataContext';
 import ContentLoader from '../components/ContentLoader';
 import useModalBehaviour from '../components/useModalBehaviour';
 import { useDialog } from '../components/DialogProvider';
@@ -21,6 +21,7 @@ const MemorandumOrders = () => {
   const { isAdmin } = useContext(AuthContext);
   const { confirm, notify } = useDialog();
   const { memorandums: memos, createMemorandum, updateMemorandum, deleteMemorandum, isCollectionLoading } = useData();
+  useCollections('memorandums');
   const isLoadingList = isCollectionLoading('memorandums');
   const [viewerMemo, setViewerMemo] = useState(null);
   const [readMemo, setReadMemo] = useState(null);
