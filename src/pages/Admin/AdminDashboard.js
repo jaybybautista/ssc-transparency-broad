@@ -16,7 +16,7 @@ import {
 } from 'react-icons/fi';
 import { AuthContext } from '../../App';
 import { useData } from '../../context/DataContext';
-import { uploadFiles, uploadImages } from '../../lib/uploads';
+import { isWebLink, uploadFiles, uploadImages } from '../../lib/uploads';
 import RichTextEditor from '../../components/RichTextEditor';
 import { richTextToPlain } from '../../components/richText';
 import { useDialog } from '../../components/DialogProvider';
@@ -204,6 +204,21 @@ const AdminDashboard = () => {
         let uploadedFileUrl = editItem?.fileUrl || '';
         let uploadedFileName = editItem?.fileName || '';
 
+        // A pasted link (e.g. Google Drive) is the way to attach a document too
+        // large to upload. The field shows an existing link, so clearing it
+        // removes that link; an uploaded file is never shown there and stays.
+        const pastedLink = String(formData.get('fileLink') || '').trim();
+        const hadLink = isWebLink(editItem?.fileUrl);
+        if (!resDocFile) {
+          if (pastedLink) {
+            if (pastedLink !== editItem?.fileUrl) uploadedFileName = '';
+            uploadedFileUrl = pastedLink;
+          } else if (hadLink) {
+            uploadedFileUrl = '';
+            uploadedFileName = '';
+          }
+        }
+
         if (resDocFile) {
           setResDocUploading(true);
           try {
@@ -220,7 +235,11 @@ const AdminDashboard = () => {
           }
 
           if (!uploadedFileUrl) {
-            notify('Failed to upload the document. Please ensure it is under 800KB if offline, or check Firebase setup.');
+            notify(
+              'This document could not be uploaded. Until Firebase Storage is turned on, files ' +
+                'must be under about 700 KB. For a larger file, remove it and paste a Google ' +
+                'Drive link instead (shared as "Anyone with the link can view").'
+            );
             return;
           }
         }
@@ -965,7 +984,8 @@ const AdminDashboard = () => {
                 </button>
               </div>
             )}
-            {editItem?.fileUrl && !resDocFile && (
+            {/* A linked document lives in the link field below instead. */}
+            {editItem?.fileUrl && !isWebLink(editItem.fileUrl) && !resDocFile && (
               <div className="existing-file-preview">
                 <FiDownload />
                 <span>Current: {editItem.fileName || 'Attached file'}</span>
@@ -981,6 +1001,20 @@ const AdminDashboard = () => {
               </div>
             )}
             {resDocStatus && <p className="upload-status-inline">{resDocStatus}</p>}
+          </div>
+          <div className="form-group">
+            <label className="form-label">Or paste a link</label>
+            <input
+              type="url"
+              name="fileLink"
+              className="form-input"
+              defaultValue={isWebLink(editItem?.fileUrl) ? editItem.fileUrl : ''}
+              placeholder="https://drive.google.com/file/d/.../view"
+            />
+            <small className="form-hint">
+              Use this for large documents. Google Drive links preview directly on the site; set the
+              file to “Anyone with the link can view”. An uploaded file above takes priority.
+            </small>
           </div>
           <div className="modal-actions" style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', width: '100%' }}>
             {editItem && (

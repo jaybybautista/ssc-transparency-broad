@@ -361,6 +361,13 @@ export const deleteRecordFiles = async (record) => {
   return summary;
 };
 
+/**
+ * True for an http(s) link (e.g. a Google Drive share link), as opposed to a
+ * file uploaded into the record. Forms use it to tell a pasted link apart from
+ * an upload when deciding what the "Or paste a link" field shows.
+ */
+export const isWebLink = (url) => /^https?:\/\//i.test(url || '');
+
 export const downloadDocument = (url, fileName = 'document') => {
   if (!url) {
     notifyOutsideReact('No document file is attached yet.');

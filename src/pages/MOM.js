@@ -5,8 +5,8 @@ import { useData, useCollections } from '../context/DataContext';
 import ContentLoader from '../components/ContentLoader';
 import useModalBehaviour from '../components/useModalBehaviour';
 import { useDialog } from '../components/DialogProvider';
-import { uploadImages, uploadFiles, downloadDocument } from '../lib/uploads';
-import DocumentViewerModal from '../components/DocumentViewerModal';
+import { uploadImages, uploadFiles, downloadDocument, isWebLink } from '../lib/uploads';
+import DocumentViewerModal, { getDriveFileId } from '../components/DocumentViewerModal';
 import AdminSearchBar, { matchesQuery } from '../components/AdminSearchBar';
 import ImageCarousel from '../components/ImageCarousel';
 import RichContent from '../components/RichContent';
@@ -50,10 +50,13 @@ const MOM = () => {
   const [uploadStatus, setUploadStatus] = useState('');
   const [selectedDocFile, setSelectedDocFile] = useState(null);
   const docFileInputRef = useRef(null);
+  // A pasted link (e.g. Google Drive): how a document too large to upload is attached.
+  const [docLink, setDocLink] = useState('');
 
   // Admin CRUD handlers
   const handleAdd = () => {
     setEditItem(null);
+    setDocLink('');
     setFormData({ title: '', date: '', location: '', attendees: '', agenda: '', summary: '', imageUrls: [], fileName: '', fileUrl: '', ...EMPTY_AUTHOR });
     setSelectedFiles([]);
     setManualImageUrls('');
@@ -65,6 +68,7 @@ const MOM = () => {
 
   const handleEdit = (meeting) => {
     setEditItem(meeting);
+    setDocLink(isWebLink(meeting.fileUrl) ? meeting.fileUrl : '');
     setFormData({
       title: meeting.title,
       date: meeting.date,
@@ -149,7 +153,11 @@ const MOM = () => {
       }
 
       if (!uploadedFileUrl) {
-        notify('Failed to upload the document file. Please ensure the file is under 800KB if offline, or check Firebase setup.');
+        notify(
+          'This document could not be uploaded. Until Firebase Storage is turned on, files ' +
+            'must be under about 700 KB. For a larger file, remove it and paste a Google ' +
+            'Drive link instead (shared as "Anyone with the link can view").'
+        );
         setIsUploading(false);
         return;
       }
@@ -172,13 +180,26 @@ const MOM = () => {
       .map((line) => line.trim())
       .filter(Boolean);
 
+    // An uploaded file wins. Otherwise the link field decides: it shows an
+    // existing link, so clearing it removes that link, while a file uploaded
+    // earlier is never shown there and stays.
+    const pastedLink = docLink.trim();
+    const linked = { fileName: formData.fileName || '', fileUrl: formData.fileUrl || '' };
+    if (pastedLink) {
+      if (pastedLink !== formData.fileUrl) linked.fileName = '';
+      linked.fileUrl = pastedLink;
+    } else if (isWebLink(formData.fileUrl)) {
+      linked.fileName = '';
+      linked.fileUrl = '';
+    }
+
     const processedData = {
       ...formData,
       attendees: Number(formData.attendees) || 0,
       agenda: formData.agenda.split('\n').filter(item => item.trim()),
       imageUrls: [...(formData.imageUrls || []), ...uploadedUrls, ...pastedUrls],
-      fileName: selectedDocFile?.name || formData.fileName || '',
-      fileUrl: uploadedFileUrl || formData.fileUrl || '',
+      fileName: selectedDocFile?.name || linked.fileName,
+      fileUrl: uploadedFileUrl || linked.fileUrl,
       authorImage: uploadedAuthorImage || formData.authorImage || ''
     };
     try {
@@ -348,16 +369,18 @@ const MOM = () => {
                       >
                         <FiEye /> View
                       </button>
-                      <button
-                        type="button"
-                        className="btn btn-primary download-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          downloadDocument(meeting.fileUrl, meeting.fileName || 'meeting-document');
-                        }}
-                      >
-                        <FiDownload /> Download
-                      </button>
+                      {(isAdmin || !getDriveFileId(meeting.fileUrl)) && (
+                        <button
+                          type="button"
+                          className="btn btn-primary download-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            downloadDocument(meeting.fileUrl, meeting.fileName || 'meeting-document');
+                          }}
+                        >
+                          <FiDownload /> Download
+                        </button>
+                      )}
                     </>
                   )}
                 </div>
@@ -463,13 +486,15 @@ const MOM = () => {
                     >
                       <FiEye /> View
                     </button>
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      onClick={() => downloadDocument(selectedMeeting.fileUrl, selectedMeeting.fileName || 'meeting-document')}
-                    >
-                      <FiDownload /> Download
-                    </button>
+                    {(isAdmin || !getDriveFileId(selectedMeeting.fileUrl)) && (
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => downloadDocument(selectedMeeting.fileUrl, selectedMeeting.fileName || 'meeting-document')}
+                      >
+                        <FiDownload /> Download
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -604,7 +629,8 @@ const MOM = () => {
                     </button>
                   </div>
                 )}
-                {editItem && (formData.fileUrl || formData.fileName) && !selectedDocFile && (
+                {/* A linked document lives in the link field below instead. */}
+                {editItem && (formData.fileUrl || formData.fileName) && !isWebLink(formData.fileUrl) && !selectedDocFile && (
                   <div className="selected-file-row">
                     <span>{formData.fileName || 'Existing document'}</span>
                     <button type="button" className="remove-file-btn" onClick={handleRemoveExistingDoc}>
@@ -612,6 +638,19 @@ const MOM = () => {
                     </button>
                   </div>
                 )}
+              </div>
+              <div className="form-group">
+                <label>Or paste a link</label>
+                <input
+                  type="url"
+                  value={docLink}
+                  onChange={(e) => setDocLink(e.target.value)}
+                  placeholder="https://drive.google.com/file/d/.../view"
+                />
+                <small className="form-hint">
+                  Use this for large documents. Google Drive links preview directly on the site;
+                  set the file to “Anyone with the link can view”. An uploaded file above takes priority.
+                </small>
               </div>
               <div className="form-actions">
                 <button type="button" className="btn-cancel" onClick={() => setShowAdminModal(false)}>

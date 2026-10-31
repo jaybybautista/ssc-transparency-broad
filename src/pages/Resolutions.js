@@ -7,7 +7,7 @@ import useModalBehaviour from '../components/useModalBehaviour';
 import { useDialog } from '../components/DialogProvider';
 import { useVoterAuth } from '../context/VoterAuthContext';
 import { uploadImages, uploadFiles, downloadDocument } from '../lib/uploads';
-import DocumentViewerModal from '../components/DocumentViewerModal';
+import DocumentViewerModal, { getDriveFileId } from '../components/DocumentViewerModal';
 import ImageCarousel from '../components/ImageCarousel';
 import RichContent from '../components/RichContent';
 import LoadMore from '../components/LoadMore';
@@ -346,16 +346,20 @@ const Resolutions = () => {
                       >
                         <FiEye /> View
                       </button>
-                      <button
-                        type="button"
-                        className="resolution-download-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          downloadDocument(resolution.fileUrl, resolution.fileName || 'resolution-document');
-                        }}
-                      >
-                        <FiDownload /> Download
-                      </button>
+                      {/* A Drive link is not a direct file, so Download would only
+                          send students to Drive. View previews it on the site. */}
+                      {(isAdmin || !getDriveFileId(resolution.fileUrl)) && (
+                        <button
+                          type="button"
+                          className="resolution-download-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            downloadDocument(resolution.fileUrl, resolution.fileName || 'resolution-document');
+                          }}
+                        >
+                          <FiDownload /> Download
+                        </button>
+                      )}
                     </>
                   )}
                 </div>
@@ -429,13 +433,15 @@ const Resolutions = () => {
                     >
                       <FiEye /> View
                     </button>
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      onClick={() => downloadDocument(selectedResolution.fileUrl, selectedResolution.fileName || 'resolution-document')}
-                    >
-                      <FiDownload /> Download
-                    </button>
+                    {(isAdmin || !getDriveFileId(selectedResolution.fileUrl)) && (
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => downloadDocument(selectedResolution.fileUrl, selectedResolution.fileName || 'resolution-document')}
+                      >
+                        <FiDownload /> Download
+                      </button>
+                    )}
                   </div>
                 </div>
               )}

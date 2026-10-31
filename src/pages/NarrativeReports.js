@@ -5,8 +5,8 @@ import { useData, useCollections } from '../context/DataContext';
 import ContentLoader from '../components/ContentLoader';
 import useModalBehaviour from '../components/useModalBehaviour';
 import { useDialog } from '../components/DialogProvider';
-import { uploadFiles, uploadImages, downloadDocument } from '../lib/uploads';
-import DocumentViewerModal from '../components/DocumentViewerModal';
+import { uploadFiles, uploadImages, downloadDocument, isWebLink } from '../lib/uploads';
+import DocumentViewerModal, { getDriveFileId } from '../components/DocumentViewerModal';
 import AdminSearchBar, { matchesQuery } from '../components/AdminSearchBar';
 import RichContent from '../components/RichContent';
 import RichTextEditor from '../components/RichTextEditor';
@@ -49,10 +49,13 @@ const NarrativeReports = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
   const docFileInputRef = useRef(null);
+  // A pasted link (e.g. Google Drive): how a document too large to upload is attached.
+  const [docLink, setDocLink] = useState('');
 
   // Admin CRUD handlers
   const handleAdd = () => {
     setEditItem(null);
+    setDocLink('');
     setFormData({ title: '', date: '', eventType: '', description: '', participants: '', imageUrls: [], fileName: '', fileUrl: '', ...EMPTY_AUTHOR });
     setSelectedImageFiles([]);
     setManualImageUrls('');
@@ -64,6 +67,7 @@ const NarrativeReports = () => {
 
   const handleEdit = (report) => {
     setEditItem(report);
+    setDocLink(isWebLink(report.fileUrl) ? report.fileUrl : '');
     setFormData({
       title: report.title,
       date: report.date,
@@ -142,7 +146,11 @@ const NarrativeReports = () => {
       }
 
       if (!uploadedFileUrl) {
-        notify('Failed to upload the document file. Please ensure the file is under 800KB if offline, or check Firebase setup.');
+        notify(
+          'This document could not be uploaded. Until Firebase Storage is turned on, files ' +
+            'must be under about 700 KB. For a larger file, remove it and paste a Google ' +
+            'Drive link instead (shared as "Anyone with the link can view").'
+        );
         setIsSaving(false);
         return;
       }
@@ -177,6 +185,19 @@ const NarrativeReports = () => {
       }
     }
 
+    // An uploaded file wins. Otherwise the link field decides: it shows an
+    // existing link, so clearing it removes that link, while a file uploaded
+    // earlier is never shown there and stays.
+    const pastedLink = docLink.trim();
+    const linked = { fileName: formData.fileName || '', fileUrl: formData.fileUrl || '' };
+    if (pastedLink) {
+      if (pastedLink !== formData.fileUrl) linked.fileName = '';
+      linked.fileUrl = pastedLink;
+    } else if (isWebLink(formData.fileUrl)) {
+      linked.fileName = '';
+      linked.fileUrl = '';
+    }
+
     const payload = {
       ...formData,
       event: formData.eventType,
@@ -184,8 +205,8 @@ const NarrativeReports = () => {
       summary: formData.description,
       participants: Number(formData.participants) || 0,
       imageUrls: [...(formData.imageUrls || []), ...uploadedImageUrls, ...pastedImageUrls],
-      fileName: selectedDocFile?.name || formData.fileName || '',
-      fileUrl: uploadedFileUrl || formData.fileUrl || '',
+      fileName: selectedDocFile?.name || linked.fileName,
+      fileUrl: uploadedFileUrl || linked.fileUrl,
       authorImage: uploadedAuthorImage || formData.authorImage || ''
     };
 
@@ -352,16 +373,18 @@ const NarrativeReports = () => {
                       >
                         <FiEye /> View
                       </button>
-                      <button
-                        type="button"
-                        className="report-download-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          downloadDocument(report.fileUrl, report.fileName || 'narrative-report');
-                        }}
-                      >
-                        <FiDownload /> Download
-                      </button>
+                      {(isAdmin || !getDriveFileId(report.fileUrl)) && (
+                        <button
+                          type="button"
+                          className="report-download-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            downloadDocument(report.fileUrl, report.fileName || 'narrative-report');
+                          }}
+                        >
+                          <FiDownload /> Download
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -447,13 +470,15 @@ const NarrativeReports = () => {
                     >
                       <FiEye /> View
                     </button>
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      onClick={() => downloadDocument(selectedReport.fileUrl, selectedReport.fileName || 'narrative-report')}
-                    >
-                      <FiDownload /> Download
-                    </button>
+                    {(isAdmin || !getDriveFileId(selectedReport.fileUrl)) && (
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => downloadDocument(selectedReport.fileUrl, selectedReport.fileName || 'narrative-report')}
+                      >
+                        <FiDownload /> Download
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -587,7 +612,8 @@ const NarrativeReports = () => {
                     </button>
                   </div>
                 )}
-                {editItem && (formData.fileUrl || formData.fileName) && !selectedDocFile && (
+                {/* A linked document lives in the link field below instead. */}
+                {editItem && (formData.fileUrl || formData.fileName) && !isWebLink(formData.fileUrl) && !selectedDocFile && (
                   <div className="selected-file-row">
                     <span>{formData.fileName || 'Existing document'}</span>
                     <button type="button" className="remove-file-btn" onClick={handleRemoveExistingDoc}>
@@ -595,6 +621,19 @@ const NarrativeReports = () => {
                     </button>
                   </div>
                 )}
+              </div>
+              <div className="form-group">
+                <label>Or paste a link</label>
+                <input
+                  type="url"
+                  value={docLink}
+                  onChange={(e) => setDocLink(e.target.value)}
+                  placeholder="https://drive.google.com/file/d/.../view"
+                />
+                <small className="form-hint">
+                  Use this for large documents. Google Drive links preview directly on the site;
+                  set the file to “Anyone with the link can view”. An uploaded file above takes priority.
+                </small>
               </div>
               <div className="form-actions">
                 <button type="button" className="btn-cancel" onClick={() => setShowAdminModal(false)}>
